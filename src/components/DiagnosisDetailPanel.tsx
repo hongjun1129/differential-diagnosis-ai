@@ -1,4 +1,10 @@
-import { AlertTriangle, ClipboardList, FileSearch, ShieldCheck } from "lucide-react";
+import {
+  AlertTriangle,
+  ClipboardCheck,
+  MinusCircle,
+  PlusCircle,
+  ShieldAlert
+} from "lucide-react";
 import type { DiagnosisScore, FindingRule } from "@/types/clinical";
 import {
   diagnosisCategoryLabels,
@@ -11,31 +17,43 @@ type DiagnosisDetailPanelProps = {
   score?: DiagnosisScore;
 };
 
-function FindingList({
+function EvidenceColumn({
   title,
+  icon,
   items,
-  emptyText
+  emptyText,
+  tone
 }: {
   title: string;
+  icon: React.ReactNode;
   items: FindingRule[];
   emptyText: string;
+  tone: string;
 }) {
   return (
-    <section>
-      <h3 className="text-sm font-semibold text-clinical-ink">{title}</h3>
+    <section className={`rounded-lg border p-3 ${tone}`}>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          {icon}
+          <h3 className="text-sm font-bold">{title}</h3>
+        </div>
+        <span className="rounded-md bg-white/80 px-2 py-0.5 text-xs font-bold">
+          {items.length}
+        </span>
+      </div>
       {items.length > 0 ? (
-        <ul className="mt-2 space-y-2">
+        <ul className="space-y-1.5">
           {items.map((item) => (
             <li
               key={item.id}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-5 text-slate-700"
+              className="rounded-md bg-white px-2.5 py-2 text-xs leading-5 text-slate-800"
             >
               {item.labelKo}
             </li>
           ))}
         </ul>
       ) : (
-        <p className="mt-2 rounded-lg border border-dashed border-slate-200 px-3 py-2 text-sm text-slate-500">
+        <p className="rounded-md bg-white px-2.5 py-2 text-xs leading-5 text-slate-500">
           {emptyText}
         </p>
       )}
@@ -43,15 +61,15 @@ function FindingList({
   );
 }
 
-function TextList({ title, items }: { title: string; items: string[] }) {
+function CompactList({ title, items }: { title: string; items: string[] }) {
   return (
-    <section>
-      <h3 className="text-sm font-semibold text-clinical-ink">{title}</h3>
-      <ul className="mt-2 space-y-2">
+    <section className="rounded-lg border border-slate-200 bg-white p-3">
+      <h3 className="text-sm font-bold text-slate-900">{title}</h3>
+      <ul className="mt-2 grid gap-1.5 md:grid-cols-2">
         {items.map((item) => (
           <li
             key={item}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm leading-5 text-slate-700"
+            className="rounded-md bg-slate-50 px-2.5 py-2 text-xs leading-5 text-slate-700"
           >
             {item}
           </li>
@@ -64,7 +82,7 @@ function TextList({ title, items }: { title: string; items: string[] }) {
 export function DiagnosisDetailPanel({ score }: DiagnosisDetailPanelProps) {
   if (!score) {
     return (
-      <aside className="rounded-lg border border-clinical-line bg-white p-4 shadow-soft">
+      <aside className="rounded-lg border border-blue-200 bg-white p-4 shadow-soft">
         <p className="text-sm text-slate-500">선택된 감별진단이 없습니다.</p>
       </aside>
     );
@@ -76,89 +94,102 @@ export function DiagnosisDetailPanel({ score }: DiagnosisDetailPanelProps) {
     .filter((note): note is string => Boolean(note));
 
   return (
-    <aside className="rounded-lg border border-clinical-line bg-white p-4 shadow-soft">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-normal text-blue-600">
-            {diagnosis.code}
-          </p>
-          <h2 className="mt-1 text-lg font-bold leading-6 text-clinical-ink">
-            {diagnosis.nameKo}
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            {diagnosis.description}
-          </p>
+    <aside className="rounded-lg border border-blue-200 bg-white shadow-soft">
+      <div className="border-b border-blue-100 px-4 py-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase text-blue-700">
+              선택 진단 근거
+            </p>
+            <h2 className="mt-1 text-lg font-extrabold leading-6 text-slate-950">
+              {diagnosis.nameKo}
+            </h2>
+            <p className="mt-1 text-xs leading-5 text-slate-600">
+              {diagnosis.description}
+            </p>
+          </div>
+          {score.redFlagTriggered ? (
+            <AlertTriangle className="h-5 w-5 shrink-0 text-red-600" aria-hidden />
+          ) : (
+            <ClipboardCheck className="h-5 w-5 shrink-0 text-blue-700" aria-hidden />
+          )}
         </div>
-        {score.redFlagTriggered ? (
-          <AlertTriangle className="h-5 w-5 shrink-0 text-red-600" aria-hidden />
-        ) : (
-          <ShieldCheck className="h-5 w-5 shrink-0 text-blue-600" aria-hidden />
-        )}
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          <span
+            className={`rounded-md border px-2 py-1 text-xs font-bold ${statusTone[score.status].className}`}
+          >
+            {score.status}
+          </span>
+          <span
+            className={`rounded-md border px-2 py-1 text-xs font-bold ${urgencyTone[diagnosis.urgency]}`}
+          >
+            {urgencyLabels[diagnosis.urgency]}
+          </span>
+          <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-bold text-slate-600">
+            {diagnosisCategoryLabels[diagnosis.category]}
+          </span>
+          <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-bold text-slate-600">
+            점수 {score.score}
+          </span>
+        </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        <span className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold ${statusTone[score.status].className}`}>
-          {score.status}
-        </span>
-        <span className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold ${urgencyTone[diagnosis.urgency]}`}>
-          {urgencyLabels[diagnosis.urgency]}
-        </span>
-        <span className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-600">
-          점수 {score.score}
-        </span>
-        <span className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-600">
-          {diagnosisCategoryLabels[diagnosis.category]}
-        </span>
-      </div>
+      <div className="space-y-3 p-4">
+        <div className="grid gap-3 md:grid-cols-2">
+          <EvidenceColumn
+            title="가능성 상승 근거"
+            icon={<PlusCircle className="h-4 w-4 text-red-600" aria-hidden />}
+            items={score.positiveFindings}
+            emptyText="선택된 체크리스트 중 상승 근거가 없습니다."
+            tone="border-red-100 bg-red-50 text-red-900"
+          />
+          <EvidenceColumn
+            title="가능성 감소 근거"
+            icon={<MinusCircle className="h-4 w-4 text-emerald-700" aria-hidden />}
+            items={score.negativeFindings}
+            emptyText="선택된 체크리스트 중 감소 근거가 없습니다."
+            tone="border-emerald-100 bg-emerald-50 text-emerald-900"
+          />
+        </div>
 
-      <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50 px-3 py-3 text-xs leading-5 text-blue-900">
-        AI가 진단을 대신하는 것이 아닙니다. 이 패널은 가능성 상승/감소와
-        배제를 위해 필요한 조건을 정리하는 보조 화면입니다.
-      </div>
-
-      <div className="mt-5 space-y-5">
-        <FindingList
-          title="가능성 상승 근거"
-          items={score.positiveFindings}
-          emptyText="선택된 소견 중 이 감별진단을 올리는 근거가 없습니다."
+        <CompactList title="아직 확인 필요" items={diagnosis.confirmatoryTests} />
+        <CompactList
+          title="배제를 위해 필요한 조건"
+          items={diagnosis.ruleOutConsiderations}
         />
-        <FindingList
-          title="가능성 감소 근거"
-          items={score.negativeFindings}
-          emptyText="선택된 소견 중 이 감별진단을 낮추는 근거가 없습니다."
-        />
-        <TextList title="핵심 감별 포인트" items={diagnosis.keyDifferentiators} />
-        <TextList title="권장 확인 항목" items={diagnosis.confirmatoryTests} />
-        <TextList title="아직 배제되지 않은 이유" items={diagnosis.ruleOutConsiderations} />
-        <TextList title="red flags" items={diagnosis.redFlags} />
 
-        <section className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-          <div className="flex items-center gap-2">
-            <ClipboardList className="h-4 w-4 text-slate-500" aria-hidden />
-            <h3 className="text-sm font-semibold text-clinical-ink">source note</h3>
-          </div>
-          <div className="mt-2 space-y-2 text-sm leading-5 text-slate-600">
-            {sourceNotes.length > 0 ? (
-              sourceNotes.map((note) => <p key={note}>{note}</p>)
-            ) : (
-              <p>
-                진단 지식은 `src/data/diagnoses.ts`, 소견 가중치는
-                `src/data/findingRules.ts`의 편집 가능한 규칙에서 계산됩니다.
-              </p>
-            )}
-          </div>
-        </section>
+        {score.redFlagTriggered || diagnosis.redFlags.length > 0 ? (
+          <section className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+            <div className="mb-2 flex items-center gap-2">
+              <ShieldAlert className="h-4 w-4 text-amber-700" aria-hidden />
+              <h3 className="text-sm font-bold text-amber-950">red flags</h3>
+            </div>
+            <ul className="grid gap-1.5 md:grid-cols-2">
+              {diagnosis.redFlags.map((item) => (
+                <li
+                  key={item}
+                  className="rounded-md bg-white px-2.5 py-2 text-xs leading-5 text-amber-950"
+                >
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
-        <section className="rounded-lg border border-amber-200 bg-amber-50 p-3">
-          <div className="flex items-center gap-2">
-            <FileSearch className="h-4 w-4 text-amber-700" aria-hidden />
-            <h3 className="text-sm font-semibold text-amber-900">표현 원칙</h3>
+        <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-900">
+          AI가 진단을 대신하는 것이 아닙니다. 위 내용은 확정 진단이 아니라
+          의료진이 감별진단과 배제 조건을 빠르게 검토하도록 돕는 보조 정보입니다.
+        </div>
+
+        {sourceNotes.length > 0 ? (
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600">
+            {sourceNotes.map((note) => (
+              <p key={note}>{note}</p>
+            ))}
           </div>
-          <p className="mt-2 text-sm leading-6 text-amber-900">
-            “확인을 위한 검사”, “배제를 위해 필요한 조건”, “의료진 판단 필요”로
-            표현하며 치료 권고 또는 최종 진단 주장을 생성하지 않습니다.
-          </p>
-        </section>
+        ) : null}
       </div>
     </aside>
   );

@@ -137,11 +137,3 @@ export type VitalSigns = {
   spo2: string;
   bt: string;
 };
-
-export type SampleCase = {
-  id: string;
-  labelKo: string;
-  patient: PatientInfo;
-  vitals: VitalSigns;
-  selectedFindingIds: string[];
-};

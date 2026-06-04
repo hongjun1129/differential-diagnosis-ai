@@ -9,17 +9,17 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="flex min-h-screen">
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="border-b border-clinical-line bg-white/95 px-4 py-4 sm:px-6">
+          <header className="border-b border-clinical-line bg-white/95 px-4 py-3 sm:px-5">
             <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
               <div className="flex items-start gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white lg:hidden">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-700 text-white lg:hidden">
                   <Stethoscope className="h-5 w-5" aria-hidden />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold tracking-normal text-clinical-ink sm:text-2xl">
+                  <h1 className="text-lg font-extrabold tracking-normal text-clinical-ink sm:text-xl">
                     흉통 감별진단 체크리스트 보조 AI
                   </h1>
-                  <p className="mt-1 max-w-4xl text-sm leading-6 text-clinical-muted">
+                  <p className="mt-1 max-w-4xl text-xs leading-5 text-clinical-muted">
                     주요 단서 기반 감별진단을 구조화하여 의료진이 위험질환을
                     빠뜨리지 않고 체계적으로 배제하도록 돕는 서비스
                   </p>
@@ -36,12 +36,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </span>
               </div>
             </div>
-            <div className="mt-4">
+            <div className="mt-3">
               <SafetyBanner />
             </div>
           </header>
 
-          <main className="flex-1 px-4 py-5 sm:px-6">{children}</main>
+          <main className="flex-1 px-4 py-4 sm:px-5">{children}</main>
 
           <footer className="border-t border-clinical-line bg-white px-4 py-3 text-center text-xs text-slate-500">
             사진, 치료, 처방, 검사 결정은 자동화하지 않습니다. 의료진 검토와

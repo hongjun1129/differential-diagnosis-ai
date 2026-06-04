@@ -24,6 +24,5 @@ npm test
 - `src/types/clinical.ts`: 임상 데이터 타입
 - `src/data/diagnoses.ts`: 편집 가능한 진단 지식 파일
 - `src/data/findingRules.ts`: 편집 가능한 소견별 가중치 규칙 파일
-- `src/data/sampleCases.ts`: 샘플 환자 프리셋
 - `src/lib/scoring.ts`: 선택 소견 기반 점수 계산 엔진
 - `src/components/`: 대시보드 UI 컴포넌트
