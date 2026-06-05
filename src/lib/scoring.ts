@@ -1,111 +1,372 @@
 import { diagnoses } from "@/data/diagnoses";
-import { findingRules } from "@/data/findingRules";
+import {
+  chestPainRuleById,
+  chestPainRules,
+  conflictDefinitions,
+  emergencyMustNotMissCodes,
+  missingKeyDataByDiagnosis,
+  urgentNextChecks
+} from "@/data/chestPainRules";
 import type {
+  ChestPainRule,
+  ConflictWarning,
   DiagnosisCode,
-  DiagnosisScore,
-  DiagnosisStatus,
-  FindingRule
+  DiagnosisEvaluation,
+  EvidenceStatus,
+  FindingRule,
+  FindingStateMap,
+  RuleEffect,
+  VitalSigns
 } from "@/types/clinical";
 
-const urgencyRank = {
-  emergent: 3,
-  urgent: 2,
-  routine: 1
+const urgencyScoreByUrgency = {
+  emergent: 30,
+  urgent: 20,
+  routine: 10
 } as const;
+
+const evidenceRank: Record<EvidenceStatus, number> = {
+  rule_in_evidence: 8,
+  strongly_supported: 7,
+  conflicting_evidence: 6,
+  supported: 5,
+  possible: 4,
+  rule_out_candidate: 3,
+  insufficient_information: 2,
+  excluded: 1
+};
 
 export const diagnosisByCode = new Map(
   diagnoses.map((diagnosis) => [diagnosis.code, diagnosis])
 );
 
 export const findingRuleById = new Map(
-  findingRules.map((finding) => [finding.id, finding])
+  chestPainRules.map((finding) => [finding.id, finding])
 );
 
-export function getDiagnosisStatus(
-  score: number,
-  redFlagTriggered: boolean
-): DiagnosisStatus {
-  if (redFlagTriggered) return "즉시 배제 필요";
-  if (score >= 5) return "가능성 높음";
-  if (score >= 2) return "가능성 중등도";
-  if (score >= 0) return "추가 확인 필요";
-  if (score >= -3) return "가능성 낮음";
-  return "배제 가능";
+function applies(effect: RuleEffect, states: FindingStateMap) {
+  if (
+    effect.requiresAllOf &&
+    !effect.requiresAllOf.every((id) => states[id] === "present")
+  ) {
+    return false;
+  }
+
+  if (
+    effect.appliesOnlyIf &&
+    !effect.appliesOnlyIf.every(
+      (condition) => states[condition.findingId] === condition.state
+    )
+  ) {
+    return false;
+  }
+
+  return true;
 }
 
-export function calculateDiagnosisScores(
+export function detectConflicts(states: FindingStateMap): ConflictWarning[] {
+  return conflictDefinitions
+    .filter(({ findingIds }) => findingIds.every((id) => states[id] === "present"))
+    .map(({ findingIds, affectedDiagnosisIds }) => {
+      const labels = findingIds.map(
+        (id) => chestPainRuleById.get(id)?.labelKo ?? id
+      );
+      return {
+        id: findingIds.join("__"),
+        findingIds,
+        findingLabels: labels,
+        affectedDiagnosisIds,
+        messageKo:
+          "서로 모순되는 소견이 선택되었습니다. 검사 시점이 다른 경우 시간 정보를 추가하거나 항목을 수정하세요."
+      };
+    });
+}
+
+function normalizeNumeric(value: string) {
+  const match = value.match(/-?\d+(\.\d+)?/);
+  return match ? Number(match[0]) : undefined;
+}
+
+function systolicBp(bp: string) {
+  const match = bp.match(/(\d{2,3})\s*\/\s*\d{2,3}/);
+  if (match) return Number(match[1]);
+  return normalizeNumeric(bp);
+}
+
+export function getAutoVitalFindingStates(vitals: VitalSigns): FindingStateMap {
+  const states: FindingStateMap = {};
+  const sbp = systolicBp(vitals.bp);
+  const hr = normalizeNumeric(vitals.hr);
+  const rr = normalizeNumeric(vitals.rr);
+  const spo2 = normalizeNumeric(vitals.spo2);
+  const bt = normalizeNumeric(vitals.bt);
+
+  if (sbp !== undefined && sbp < 90) states.V28 = "present";
+  if (hr !== undefined && hr > 100) states.V30 = "present";
+  if (spo2 !== undefined && spo2 < 92) states.V29 = "present";
+  if (bt !== undefined && bt >= 38) states.V31 = "present";
+  if (rr !== undefined && rr >= 24) states.H12 = "present";
+
+  return states;
+}
+
+export function mergeFindingStates(
+  manualStates: FindingStateMap,
+  autoStates: FindingStateMap
+): FindingStateMap {
+  return {
+    ...autoStates,
+    ...manualStates
+  };
+}
+
+export function selectedIdsToFindingStates(
   selectedFindingIds: string[]
-): DiagnosisScore[] {
-  const selectedIdSet = new Set(selectedFindingIds);
-  const selectedRules = findingRules.filter((rule) => selectedIdSet.has(rule.id));
+): FindingStateMap {
+  return Object.fromEntries(
+    selectedFindingIds.map((id) => [id, "present" as const])
+  );
+}
 
-  const scores = diagnoses.map((diagnosis) => {
-    let score = 0;
-    const positiveFindings: FindingRule[] = [];
-    const negativeFindings: FindingRule[] = [];
-    let redFlagTriggered = false;
+export function getPresentRules(states: FindingStateMap): ChestPainRule[] {
+  return Object.entries(states)
+    .filter(([, state]) => state === "present")
+    .map(([id]) => chestPainRuleById.get(id))
+    .filter((rule): rule is ChestPainRule => Boolean(rule));
+}
 
-    // Each finding contributes only its configured diagnosis weight.
-    // Red flags are tracked separately so urgent rule-out conditions float to the top.
-    for (const rule of selectedRules) {
-      const weight = rule.weights[diagnosis.code] ?? 0;
-      score += weight;
+export function getActiveRules(states: FindingStateMap): ChestPainRule[] {
+  return Object.entries(states)
+    .filter(([, state]) => state !== "unknown")
+    .map(([id]) => chestPainRuleById.get(id))
+    .filter((rule): rule is ChestPainRule => Boolean(rule));
+}
 
-      if (weight > 0) positiveFindings.push(rule);
-      if (weight < 0) negativeFindings.push(rule);
-      if (rule.redFlagFor?.includes(diagnosis.code)) redFlagTriggered = true;
+function resolveEvidenceStatus({
+  likelihoodSupportScore,
+  hasRuleIn,
+  hasRedFlag,
+  hasRuleOut,
+  hasAgainstOnly,
+  hasConflict,
+  diagnosisMustNotMiss
+}: {
+  likelihoodSupportScore: number;
+  hasRuleIn: boolean;
+  hasRedFlag: boolean;
+  hasRuleOut: boolean;
+  hasAgainstOnly: boolean;
+  hasConflict: boolean;
+  diagnosisMustNotMiss: boolean;
+}): EvidenceStatus {
+  if (hasConflict) return "conflicting_evidence";
+  if (hasRuleIn) return "rule_in_evidence";
+  if (hasRedFlag || likelihoodSupportScore >= 6) return "strongly_supported";
+  if (likelihoodSupportScore >= 3) return "supported";
+  if (likelihoodSupportScore > 0) return "possible";
+  if (hasRuleOut || likelihoodSupportScore <= -4) {
+    return diagnosisMustNotMiss ? "rule_out_candidate" : "excluded";
+  }
+  if (hasAgainstOnly) return "rule_out_candidate";
+  return "insufficient_information";
+}
+
+function whyRankedText(evaluation: Pick<
+  DiagnosisEvaluation,
+  | "evidenceStatus"
+  | "likelihoodSupportScore"
+  | "urgencyScore"
+  | "ruleInFindings"
+  | "redFlagFindings"
+  | "conflictWarnings"
+>) {
+  if (evaluation.conflictWarnings.length > 0) {
+    return "상충 소견이 있어 확정적 지지 또는 배제 판단을 보류합니다.";
+  }
+  if (evaluation.ruleInFindings.length > 0) {
+    return "확인 소견이 있어 약한 소견 여러 개보다 우선해 표시됩니다.";
+  }
+  if (evaluation.redFlagFindings.length > 0) {
+    return "red flag가 선택되어 응급 배제 필요 항목으로 우선 표시됩니다.";
+  }
+  if (evaluation.evidenceStatus === "rule_out_candidate") {
+    return "배제 조건에 가까운 소견이 있으나 단독 확정 배제가 아니라 추가 확인이 필요합니다.";
+  }
+  return `체크리스트 지지도 ${evaluation.likelihoodSupportScore}, 응급도 ${evaluation.urgencyScore}를 함께 고려했습니다.`;
+}
+
+export function evaluateDiagnoses(
+  findingStates: FindingStateMap
+): DiagnosisEvaluation[] {
+  const conflicts = detectConflicts(findingStates);
+
+  const evaluations = diagnoses.map((diagnosis) => {
+    let likelihoodSupportScore = 0;
+    const supportingFindings: ChestPainRule[] = [];
+    const findingsAgainst: ChestPainRule[] = [];
+    const ruleInFindings: ChestPainRule[] = [];
+    const ruleOutFindings: ChestPainRule[] = [];
+    const redFlagFindings: ChestPainRule[] = [];
+
+    for (const [id, state] of Object.entries(findingStates)) {
+      if (state === "unknown") continue;
+      const rule = chestPainRuleById.get(id);
+      if (!rule) continue;
+      const effects =
+        state === "present" ? rule.presentEffects : rule.absentEffects ?? [];
+
+      for (const effect of effects) {
+        if (effect.targetDiagnosisId !== diagnosis.code || !applies(effect, findingStates)) {
+          continue;
+        }
+
+        likelihoodSupportScore += effect.weight;
+
+        if (
+          effect.effectType === "weak_support" ||
+          effect.effectType === "moderate_support" ||
+          effect.effectType === "strong_support"
+        ) {
+          supportingFindings.push(rule);
+        }
+        if (effect.effectType === "rule_in") {
+          ruleInFindings.push(rule);
+          supportingFindings.push(rule);
+        }
+        if (effect.effectType === "red_flag") {
+          redFlagFindings.push(rule);
+          supportingFindings.push(rule);
+        }
+        if (
+          effect.effectType === "weak_against" ||
+          effect.effectType === "strong_against"
+        ) {
+          findingsAgainst.push(rule);
+        }
+        if (
+          effect.effectType === "rule_out_condition" ||
+          effect.effectType === "exclusion_requirement"
+        ) {
+          ruleOutFindings.push(rule);
+          findingsAgainst.push(rule);
+        }
+      }
     }
 
-    return {
+    const conflictWarnings = conflicts.filter((conflict) =>
+      conflict.affectedDiagnosisIds.includes(diagnosis.code)
+    );
+    const hasConflict = conflictWarnings.length > 0;
+    const urgencyScore = urgencyScoreByUrgency[diagnosis.urgency];
+    const evidenceStatus = resolveEvidenceStatus({
+      likelihoodSupportScore,
+      hasRuleIn: ruleInFindings.length > 0,
+      hasRedFlag: redFlagFindings.length > 0,
+      hasRuleOut: ruleOutFindings.length > 0,
+      hasAgainstOnly:
+        findingsAgainst.length > 0 &&
+        supportingFindings.length === 0 &&
+        ruleInFindings.length === 0,
+      hasConflict,
+      diagnosisMustNotMiss: diagnosis.mustNotMiss
+    });
+    const missingKeyData =
+      missingKeyDataByDiagnosis[diagnosis.code] ??
+      diagnosis.confirmatoryTests.slice(0, 3);
+
+    const evaluation: DiagnosisEvaluation = {
       diagnosis,
-      score,
-      status: getDiagnosisStatus(score, redFlagTriggered),
-      positiveFindings,
-      negativeFindings,
-      redFlagTriggered
+      likelihoodSupportScore,
+      urgencyScore,
+      evidenceStatus,
+      supportingFindings: [...new Set(supportingFindings)],
+      findingsAgainst: [...new Set(findingsAgainst)],
+      ruleInFindings: [...new Set(ruleInFindings)],
+      ruleOutFindings: [...new Set(ruleOutFindings)],
+      redFlagFindings: [...new Set(redFlagFindings)],
+      missingKeyData,
+      conflictWarnings,
+      matchedRedFlags: [...new Set(redFlagFindings.map((rule) => rule.labelKo))],
+      urgentNextCheck:
+        urgentNextChecks[diagnosis.code] ??
+        diagnosis.confirmatoryTests[0] ??
+        "의료진 판단에 따라 필요한 확인 항목 검토",
+      whyRanked: ""
     };
+
+    evaluation.whyRanked = whyRankedText(evaluation);
+    return evaluation;
   });
 
-  return scores.sort((a, b) => {
-    if (a.redFlagTriggered !== b.redFlagTriggered) {
-      return a.redFlagTriggered ? -1 : 1;
+  return evaluations.sort((a, b) => {
+    const statusDelta =
+      evidenceRank[b.evidenceStatus] - evidenceRank[a.evidenceStatus];
+    if (statusDelta !== 0) return statusDelta;
+
+    if (a.urgencyScore !== b.urgencyScore) {
+      return b.urgencyScore - a.urgencyScore;
     }
 
-    const aMustNotMiss = a.diagnosis.mustNotMiss && a.score >= 1;
-    const bMustNotMiss = b.diagnosis.mustNotMiss && b.score >= 1;
-    if (aMustNotMiss !== bMustNotMiss) return aMustNotMiss ? -1 : 1;
-
-    if (a.score !== b.score) return b.score - a.score;
-
-    const urgencyDelta =
-      urgencyRank[b.diagnosis.urgency] - urgencyRank[a.diagnosis.urgency];
-    if (urgencyDelta !== 0) return urgencyDelta;
+    if (a.likelihoodSupportScore !== b.likelihoodSupportScore) {
+      return b.likelihoodSupportScore - a.likelihoodSupportScore;
+    }
 
     return a.diagnosis.nameKo.localeCompare(b.diagnosis.nameKo, "ko");
   });
 }
 
-export function getSelectedFindingRules(
+export function calculateDiagnosisScores(
   selectedFindingIds: string[]
-): FindingRule[] {
-  return selectedFindingIds
-    .map((id) => findingRuleById.get(id))
-    .filter((rule): rule is FindingRule => Boolean(rule));
+): DiagnosisEvaluation[] {
+  return evaluateDiagnoses(selectedIdsToFindingStates(selectedFindingIds));
+}
+
+export function getSelectedFindingRules(
+  findingStatesOrIds: FindingStateMap | string[]
+): ChestPainRule[] {
+  const states = Array.isArray(findingStatesOrIds)
+    ? selectedIdsToFindingStates(findingStatesOrIds)
+    : findingStatesOrIds;
+  return getPresentRules(states);
+}
+
+export function getEmergencyEvaluations(
+  evaluations: DiagnosisEvaluation[]
+): DiagnosisEvaluation[] {
+  const byCode = new Map(
+    evaluations.map((evaluation) => [evaluation.diagnosis.code, evaluation])
+  );
+  return emergencyMustNotMissCodes
+    .map((code) => byCode.get(code))
+    .filter((item): item is DiagnosisEvaluation => Boolean(item));
 }
 
 export function validateFindingRuleCodes(): DiagnosisCode[] {
   const invalidCodes = new Set<DiagnosisCode>();
   const knownCodes = new Set(diagnoses.map((diagnosis) => diagnosis.code));
 
-  for (const rule of findingRules) {
-    for (const code of Object.keys(rule.weights) as DiagnosisCode[]) {
+  for (const rule of chestPainRules) {
+    for (const code of rule.targetDiagnosisIds) {
       if (!knownCodes.has(code)) invalidCodes.add(code);
     }
-
-    for (const code of rule.redFlagFor ?? []) {
-      if (!knownCodes.has(code)) invalidCodes.add(code);
+    for (const effect of [...rule.presentEffects, ...(rule.absentEffects ?? [])]) {
+      if (!knownCodes.has(effect.targetDiagnosisId)) {
+        invalidCodes.add(effect.targetDiagnosisId);
+      }
     }
   }
 
   return [...invalidCodes];
+}
+
+export function legacyFindingRule(id: string): FindingRule | undefined {
+  const rule = chestPainRuleById.get(id);
+  if (!rule) return undefined;
+  return {
+    id: rule.id,
+    labelKo: rule.labelKo,
+    category: rule.category,
+    weights: {},
+    sourceNote: rule.sourceNote
+  };
 }

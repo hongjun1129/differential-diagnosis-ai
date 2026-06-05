@@ -3,21 +3,23 @@ import {
   ClipboardCheck,
   MinusCircle,
   PlusCircle,
-  ShieldAlert
+  ShieldAlert,
+  Target
 } from "lucide-react";
-import type { DiagnosisScore, FindingRule } from "@/types/clinical";
+import type { ChestPainRule, DiagnosisEvaluation } from "@/types/clinical";
 import {
   diagnosisCategoryLabels,
-  statusTone,
+  evidenceStatusLabels,
+  evidenceStatusTone,
   urgencyLabels,
   urgencyTone
 } from "@/utils/categoryLabels";
 
 type DiagnosisDetailPanelProps = {
-  score?: DiagnosisScore;
+  score?: DiagnosisEvaluation;
 };
 
-function EvidenceColumn({
+function RuleList({
   title,
   icon,
   items,
@@ -26,7 +28,7 @@ function EvidenceColumn({
 }: {
   title: string;
   icon: React.ReactNode;
-  items: FindingRule[];
+  items: ChestPainRule[];
   emptyText: string;
   tone: string;
 }) {
@@ -48,7 +50,10 @@ function EvidenceColumn({
               key={item.id}
               className="rounded-md bg-white px-2.5 py-2 text-xs leading-5 text-slate-800"
             >
-              {item.labelKo}
+              <p className="font-semibold">{item.labelKo}</p>
+              <p className="mt-0.5 text-[11px] text-slate-500">
+                {item.effectType} · {item.evidenceLevel}
+              </p>
             </li>
           ))}
         </ul>
@@ -89,9 +94,7 @@ export function DiagnosisDetailPanel({ score }: DiagnosisDetailPanelProps) {
   }
 
   const { diagnosis } = score;
-  const sourceNotes = [...score.positiveFindings, ...score.negativeFindings]
-    .map((finding) => finding.sourceNote)
-    .filter((note): note is string => Boolean(note));
+  const tone = evidenceStatusTone[score.evidenceStatus];
 
   return (
     <aside className="rounded-lg border border-blue-200 bg-white shadow-soft">
@@ -108,88 +111,98 @@ export function DiagnosisDetailPanel({ score }: DiagnosisDetailPanelProps) {
               {diagnosis.description}
             </p>
           </div>
-          {score.redFlagTriggered ? (
-            <AlertTriangle className="h-5 w-5 shrink-0 text-red-600" aria-hidden />
+          {score.conflictWarnings.length > 0 ? (
+            <AlertTriangle className="h-5 w-5 shrink-0 text-purple-700" aria-hidden />
           ) : (
             <ClipboardCheck className="h-5 w-5 shrink-0 text-blue-700" aria-hidden />
           )}
         </div>
 
         <div className="mt-3 flex flex-wrap gap-2">
-          <span
-            className={`rounded-md border px-2 py-1 text-xs font-bold ${statusTone[score.status].className}`}
-          >
-            {score.status}
+          <span className={`rounded-md border px-2 py-1 text-xs font-bold ${tone.className}`}>
+            {evidenceStatusLabels[score.evidenceStatus]}
           </span>
-          <span
-            className={`rounded-md border px-2 py-1 text-xs font-bold ${urgencyTone[diagnosis.urgency]}`}
-          >
+          <span className={`rounded-md border px-2 py-1 text-xs font-bold ${urgencyTone[diagnosis.urgency]}`}>
             {urgencyLabels[diagnosis.urgency]}
           </span>
           <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-bold text-slate-600">
             {diagnosisCategoryLabels[diagnosis.category]}
           </span>
           <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-bold text-slate-600">
-            점수 {score.score}
+            체크리스트 지지도 {score.likelihoodSupportScore}
+          </span>
+          <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-bold text-slate-600">
+            응급도 {score.urgencyScore}
           </span>
         </div>
       </div>
 
       <div className="space-y-3 p-4">
-        <div className="grid gap-3 md:grid-cols-2">
-          <EvidenceColumn
-            title="가능성 상승 근거"
-            icon={<PlusCircle className="h-4 w-4 text-red-600" aria-hidden />}
-            items={score.positiveFindings}
-            emptyText="선택된 체크리스트 중 상승 근거가 없습니다."
-            tone="border-red-100 bg-red-50 text-red-900"
-          />
-          <EvidenceColumn
-            title="가능성 감소 근거"
-            icon={<MinusCircle className="h-4 w-4 text-emerald-700" aria-hidden />}
-            items={score.negativeFindings}
-            emptyText="선택된 체크리스트 중 감소 근거가 없습니다."
-            tone="border-emerald-100 bg-emerald-50 text-emerald-900"
-          />
-        </div>
-
-        <CompactList title="아직 확인 필요" items={diagnosis.confirmatoryTests} />
-        <CompactList
-          title="배제를 위해 필요한 조건"
-          items={diagnosis.ruleOutConsiderations}
-        />
-
-        {score.redFlagTriggered || diagnosis.redFlags.length > 0 ? (
-          <section className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+        {score.conflictWarnings.length > 0 ? (
+          <section className="rounded-lg border border-purple-200 bg-purple-50 p-3 text-xs leading-5 text-purple-950">
             <div className="mb-2 flex items-center gap-2">
-              <ShieldAlert className="h-4 w-4 text-amber-700" aria-hidden />
-              <h3 className="text-sm font-bold text-amber-950">red flags</h3>
+              <AlertTriangle className="h-4 w-4" aria-hidden />
+              <h3 className="text-sm font-bold">상충 소견 경고</h3>
             </div>
-            <ul className="grid gap-1.5 md:grid-cols-2">
-              {diagnosis.redFlags.map((item) => (
-                <li
-                  key={item}
-                  className="rounded-md bg-white px-2.5 py-2 text-xs leading-5 text-amber-950"
-                >
-                  {item}
-                </li>
-              ))}
-            </ul>
+            {score.conflictWarnings.map((conflict) => (
+              <p key={conflict.id}>
+                {conflict.messageKo} ({conflict.findingLabels.join(" vs ")})
+              </p>
+            ))}
           </section>
         ) : null}
 
-        <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-900">
-          AI가 진단을 대신하는 것이 아닙니다. 위 내용은 확정 진단이 아니라
-          의료진이 감별진단과 배제 조건을 빠르게 검토하도록 돕는 보조 정보입니다.
+        <div className="rounded-lg border border-blue-100 bg-blue-50 p-3">
+          <div className="flex items-center gap-2">
+            <Target className="h-4 w-4 text-blue-700" aria-hidden />
+            <h3 className="text-sm font-bold text-blue-950">
+              왜 이 위치에 표시되었나
+            </h3>
+          </div>
+          <p className="mt-2 text-xs leading-5 text-blue-950">
+            {score.whyRanked}
+          </p>
         </div>
 
-        {sourceNotes.length > 0 ? (
-          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600">
-            {sourceNotes.map((note) => (
-              <p key={note}>{note}</p>
-            ))}
-          </div>
-        ) : null}
+        <div className="grid gap-3 md:grid-cols-2">
+          <RuleList
+            title="Supporting findings"
+            icon={<PlusCircle className="h-4 w-4 text-blue-700" aria-hidden />}
+            items={score.supportingFindings}
+            emptyText="선택된 지지 근거가 없습니다."
+            tone="border-blue-100 bg-blue-50 text-blue-950"
+          />
+          <RuleList
+            title="Findings against"
+            icon={<MinusCircle className="h-4 w-4 text-emerald-700" aria-hidden />}
+            items={score.findingsAgainst}
+            emptyText="선택된 반대 근거가 없습니다."
+            tone="border-emerald-100 bg-emerald-50 text-emerald-950"
+          />
+          <RuleList
+            title="Rule-in findings"
+            icon={<ShieldAlert className="h-4 w-4 text-red-700" aria-hidden />}
+            items={score.ruleInFindings}
+            emptyText="현재 rule-in 확인 소견은 없습니다."
+            tone="border-red-100 bg-red-50 text-red-950"
+          />
+          <RuleList
+            title="Rule-out/exclusion requirements"
+            icon={<ClipboardCheck className="h-4 w-4 text-slate-700" aria-hidden />}
+            items={score.ruleOutFindings}
+            emptyText="명시적 배제 조건은 아직 선택되지 않았습니다."
+            tone="border-slate-200 bg-slate-50 text-slate-900"
+          />
+        </div>
+
+        <CompactList title="Missing key data" items={score.missingKeyData} />
+        <CompactList title="Red flags" items={diagnosis.redFlags} />
+
+        <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-900">
+          AI가 진단을 대신하는 것이 아닙니다. 위 내용은 확정 진단이나
+          보정된 확률이 아니라, 의료진이 감별진단과 배제 조건을 빠르게 검토하도록
+          돕는 규칙 기반 보조 정보입니다.
+        </div>
       </div>
     </aside>
   );

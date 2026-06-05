@@ -94,6 +94,33 @@ export type FindingCategory =
 
 export type FindingWeight = -2 | -1 | 0 | 1 | 2;
 
+export type FindingState = "unknown" | "present" | "absent";
+
+export type FindingStateMap = Partial<Record<string, FindingState>>;
+
+export type EvidenceLevel =
+  | "weak"
+  | "moderate"
+  | "strong"
+  | "guideline"
+  | "confirmatory";
+
+export type RuleEffectType =
+  | "weak_support"
+  | "moderate_support"
+  | "strong_support"
+  | "rule_in"
+  | "weak_against"
+  | "strong_against"
+  | "rule_out_condition"
+  | "red_flag"
+  | "exclusion_requirement";
+
+export type RuleCondition = {
+  findingId: string;
+  state: FindingState;
+};
+
 export type FindingRule = {
   id: string;
   labelKo: string;
@@ -104,22 +131,68 @@ export type FindingRule = {
   sourceNote?: string;
 };
 
-export type DiagnosisStatus =
-  | "즉시 배제 필요"
-  | "가능성 높음"
-  | "가능성 중등도"
-  | "추가 확인 필요"
-  | "가능성 낮음"
-  | "배제 가능";
-
-export type DiagnosisScore = {
-  diagnosis: Diagnosis;
-  score: number;
-  status: DiagnosisStatus;
-  positiveFindings: FindingRule[];
-  negativeFindings: FindingRule[];
-  redFlagTriggered: boolean;
+export type RuleEffect = {
+  targetDiagnosisId: DiagnosisCode;
+  effectType: RuleEffectType;
+  weight: number;
+  evidenceLevel: EvidenceLevel;
+  sourceNote?: string;
+  requiresAllOf?: string[];
+  appliesOnlyIf?: RuleCondition[];
 };
+
+export type ChestPainRule = {
+  id: string;
+  labelKo: string;
+  category: FindingCategory;
+  targetDiagnosisIds: DiagnosisCode[];
+  effectType: RuleEffectType;
+  weight: number;
+  evidenceLevel: EvidenceLevel;
+  sourceNote: string;
+  conflictsWith: string[];
+  requiresAllOf?: string[];
+  appliesOnlyIf?: RuleCondition[];
+  presentEffects: RuleEffect[];
+  absentEffects?: RuleEffect[];
+};
+
+export type EvidenceStatus =
+  | "insufficient_information"
+  | "possible"
+  | "supported"
+  | "strongly_supported"
+  | "rule_in_evidence"
+  | "rule_out_candidate"
+  | "conflicting_evidence"
+  | "excluded";
+
+export type ConflictWarning = {
+  id: string;
+  findingIds: string[];
+  findingLabels: string[];
+  affectedDiagnosisIds: DiagnosisCode[];
+  messageKo: string;
+};
+
+export type DiagnosisEvaluation = {
+  diagnosis: Diagnosis;
+  likelihoodSupportScore: number;
+  urgencyScore: number;
+  evidenceStatus: EvidenceStatus;
+  supportingFindings: ChestPainRule[];
+  findingsAgainst: ChestPainRule[];
+  ruleInFindings: ChestPainRule[];
+  ruleOutFindings: ChestPainRule[];
+  redFlagFindings: ChestPainRule[];
+  missingKeyData: string[];
+  conflictWarnings: ConflictWarning[];
+  matchedRedFlags: string[];
+  urgentNextCheck: string;
+  whyRanked: string;
+};
+
+export type DiagnosisScore = DiagnosisEvaluation;
 
 export type PatientInfo = {
   age: string;

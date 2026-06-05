@@ -10,9 +10,17 @@ import {
 } from "@/components/DiagnosisRanking";
 import { PatientSnapshotPanel } from "@/components/PatientSnapshotPanel";
 import {
-  calculateDiagnosisScores,
+  evaluateDiagnoses,
+  getAutoVitalFindingStates,
+  getEmergencyEvaluations,
+  mergeFindingStates
 } from "@/lib/scoring";
-import type { PatientInfo, VitalSigns } from "@/types/clinical";
+import type {
+  FindingState,
+  FindingStateMap,
+  PatientInfo,
+  VitalSigns
+} from "@/types/clinical";
 
 const emptyPatient: PatientInfo = {
   age: "",
@@ -34,36 +42,57 @@ const emptyVitals: VitalSigns = {
 export function ClinicalDashboard() {
   const [patient, setPatient] = useState<PatientInfo>(emptyPatient);
   const [vitals, setVitals] = useState<VitalSigns>(emptyVitals);
-  const [selectedFindingIds, setSelectedFindingIds] = useState<string[]>([]);
+  const [manualFindingStates, setManualFindingStates] =
+    useState<FindingStateMap>({});
   const [activeDiagnosisCode, setActiveDiagnosisCode] = useState<string>();
 
+  const autoFindingStates = useMemo(
+    () => getAutoVitalFindingStates(vitals),
+    [vitals]
+  );
+  const effectiveFindingStates = useMemo(
+    () => mergeFindingStates(manualFindingStates, autoFindingStates),
+    [manualFindingStates, autoFindingStates]
+  );
   const scores = useMemo(
-    () => calculateDiagnosisScores(selectedFindingIds),
-    [selectedFindingIds]
+    () => evaluateDiagnoses(effectiveFindingStates),
+    [effectiveFindingStates]
+  );
+  const emergencyScores = useMemo(
+    () => getEmergencyEvaluations(scores),
+    [scores]
   );
   const topScores = useMemo(
-    () => getTopDiagnosisScores(scores, selectedFindingIds.length, 6),
-    [scores, selectedFindingIds.length]
+    () => getTopDiagnosisScores(scores, effectiveFindingStates, 6),
+    [scores, effectiveFindingStates]
   );
   const selectedScore =
     topScores.find((score) => score.diagnosis.code === activeDiagnosisCode) ??
     topScores[0];
   const activeCode = selectedScore?.diagnosis.code;
 
-  const toggleFinding = (id: string) => {
-    setSelectedFindingIds((current) =>
-      current.includes(id)
-        ? current.filter((item) => item !== id)
-        : [...current, id]
-    );
+  const setFindingState = (id: string, state: FindingState) => {
+    setManualFindingStates((current) => {
+      const next = { ...current };
+      if (state === "unknown") {
+        next[id] = "unknown";
+      } else {
+        next[id] = state;
+      }
+      return next;
+    });
   };
 
   const resetAll = () => {
     setPatient(emptyPatient);
     setVitals(emptyVitals);
-    setSelectedFindingIds([]);
+    setManualFindingStates({});
     setActiveDiagnosisCode(undefined);
   };
+
+  const selectedFindingCount = Object.values(effectiveFindingStates).filter(
+    (state) => state === "present" || state === "absent"
+  ).length;
 
   return (
     <AppShell>
@@ -80,7 +109,8 @@ export function ClinicalDashboard() {
           <div className="space-y-4">
             <DiagnosisRanking
               scores={topScores}
-              selectedFindingCount={selectedFindingIds.length}
+              emergencyScores={emergencyScores}
+              selectedFindingCount={selectedFindingCount}
               activeCode={activeCode}
               onSelect={setActiveDiagnosisCode}
             />
@@ -88,14 +118,10 @@ export function ClinicalDashboard() {
           </div>
 
           <ChecklistPanel
-            selectedFindingIds={selectedFindingIds}
-            onToggleFinding={toggleFinding}
-            onRemoveFinding={(id) =>
-              setSelectedFindingIds((current) =>
-                current.filter((item) => item !== id)
-              )
-            }
-            onClear={() => setSelectedFindingIds([])}
+            findingStates={effectiveFindingStates}
+            autoFindingStates={autoFindingStates}
+            onSetFindingState={setFindingState}
+            onClear={() => setManualFindingStates({})}
           />
         </div>
       </div>
