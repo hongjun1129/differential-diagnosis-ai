@@ -141,14 +141,14 @@ export const emergencyDisplayNames: Record<DiagnosisCode, string> = {
   FCP: "기능성 흉통"
 };
 
-export const urgentNextChecks: Partial<Record<DiagnosisCode, string>> = {
-  STEMI: "즉시 12유도 ECG 반복 및 serial hs-troponin 확인",
-  NSTEMI: "반복 ECG와 serial hs-troponin 변화 확인",
-  DIS: "대동맥 CTA/TEE로 급성 대동맥증후군 배제",
-  PE: "PE 사전확률, D-dimer/CTPA 또는 V/Q scan 확인",
-  TPTX: "침상 폐초음파 또는 CXR로 긴장성 기흉 단서 확인",
-  PERI: "심초음파로 심낭삼출/압전 생리 확인",
-  BOER: "CT esophagography 또는 water-soluble esophagram 확인"
+export const nextDiscriminatingInfoByDiagnosis: Partial<Record<DiagnosisCode, string>> = {
+  STEMI: "ACS 감별에 필요한 추가 정보: 반복 ECG 변화, serial hs-troponin 변화, 증상 시작 시점",
+  NSTEMI: "NSTEMI/ACS 감별에 필요한 추가 정보: serial hs-troponin 상승/하강, 반복 ECG 변화, 혈역학 안정성",
+  DIS: "급성 대동맥증후군 감별에 필요한 추가 정보: 등 방사통, 양팔 혈압/맥박 차이, 대동맥 영상 상태",
+  PE: "PE와 폐렴/기흉 감별에 필요한 추가 정보: SpO2, PE 사전확률, D-dimer/CTPA 상태, 우심부담 여부",
+  TPTX: "기흉/긴장성 기흉 감별에 필요한 추가 정보: 한쪽 호흡음, 혈역학 상태, CXR/폐초음파 소견",
+  PERI: "심낭염/압전 감별에 필요한 추가 정보: 자세성 통증, 경정맥 팽대, 심낭삼출/압전 생리 여부",
+  BOER: "식도파열 감별에 필요한 추가 정보: 구토 후 발생, 종격동 공기/흉수, 식도 조영 누출 여부"
 };
 
 export const missingKeyDataByDiagnosis: Partial<Record<DiagnosisCode, string[]>> = {

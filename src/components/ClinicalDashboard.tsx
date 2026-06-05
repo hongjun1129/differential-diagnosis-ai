@@ -9,6 +9,7 @@ import {
   getTopDiagnosisScores
 } from "@/components/DiagnosisRanking";
 import { PatientSnapshotPanel } from "@/components/PatientSnapshotPanel";
+import { ProblemRepresentationPanel } from "@/components/ProblemRepresentationPanel";
 import {
   evaluateDiagnoses,
   getAutoVitalFindingStates,
@@ -103,6 +104,12 @@ export function ClinicalDashboard() {
           onPatientChange={setPatient}
           onVitalsChange={setVitals}
           onReset={resetAll}
+        />
+
+        <ProblemRepresentationPanel
+          patient={patient}
+          vitals={vitals}
+          findingStates={effectiveFindingStates}
         />
 
         <div className="grid gap-4 xl:grid-cols-[minmax(420px,0.92fr)_minmax(520px,1.08fr)]">

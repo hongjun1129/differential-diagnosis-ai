@@ -156,38 +156,41 @@ export function DiagnosisDetailPanel({ score }: DiagnosisDetailPanelProps) {
           <div className="flex items-center gap-2">
             <Target className="h-4 w-4 text-blue-700" aria-hidden />
             <h3 className="text-sm font-bold text-blue-950">
-              왜 이 위치에 표시되었나
+              왜 이 순위인가
             </h3>
           </div>
           <p className="mt-2 text-xs leading-5 text-blue-950">
             {score.whyRanked}
           </p>
+          <p className="mt-1 text-xs leading-5 text-blue-950">
+            {score.explanationKo}
+          </p>
         </div>
 
         <div className="grid gap-3 md:grid-cols-2">
           <RuleList
-            title="Supporting findings"
+            title="이 진단을 지지하는 소견"
             icon={<PlusCircle className="h-4 w-4 text-blue-700" aria-hidden />}
             items={score.supportingFindings}
             emptyText="선택된 지지 근거가 없습니다."
             tone="border-blue-100 bg-blue-50 text-blue-950"
           />
           <RuleList
-            title="Findings against"
+            title="이 진단과 맞지 않는 소견"
             icon={<MinusCircle className="h-4 w-4 text-emerald-700" aria-hidden />}
             items={score.findingsAgainst}
             emptyText="선택된 반대 근거가 없습니다."
             tone="border-emerald-100 bg-emerald-50 text-emerald-950"
           />
           <RuleList
-            title="Rule-in findings"
+            title="확정기 근거"
             icon={<ShieldAlert className="h-4 w-4 text-red-700" aria-hidden />}
             items={score.ruleInFindings}
             emptyText="현재 rule-in 확인 소견은 없습니다."
             tone="border-red-100 bg-red-50 text-red-950"
           />
           <RuleList
-            title="Rule-out/exclusion requirements"
+            title="배제 조건 중 충족된 것"
             icon={<ClipboardCheck className="h-4 w-4 text-slate-700" aria-hidden />}
             items={score.ruleOutFindings}
             emptyText="명시적 배제 조건은 아직 선택되지 않았습니다."
@@ -195,7 +198,22 @@ export function DiagnosisDetailPanel({ score }: DiagnosisDetailPanelProps) {
           />
         </div>
 
-        <CompactList title="Missing key data" items={score.missingKeyData} />
+        <CompactList
+          title="배제 조건 중 아직 부족한 것"
+          items={score.ruleOutCriteriaMissing}
+        />
+        <CompactList
+          title="아직 확인되지 않은 핵심 정보"
+          items={score.missingKeyData}
+        />
+        <section className="rounded-lg border border-slate-200 bg-white p-3">
+          <h3 className="text-sm font-bold text-slate-900">
+            감별에 필요한 추가 정보
+          </h3>
+          <p className="mt-2 rounded-md bg-slate-50 px-2.5 py-2 text-xs leading-5 text-slate-700">
+            {score.nextDiscriminatingInformation}
+          </p>
+        </section>
         <CompactList title="Red flags" items={diagnosis.redFlags} />
 
         <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-900">

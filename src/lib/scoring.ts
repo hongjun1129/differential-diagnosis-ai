@@ -5,7 +5,7 @@ import {
   conflictDefinitions,
   emergencyMustNotMissCodes,
   missingKeyDataByDiagnosis,
-  urgentNextChecks
+  nextDiscriminatingInfoByDiagnosis
 } from "@/data/chestPainRules";
 import type {
   ChestPainRule,
@@ -195,6 +195,58 @@ function whyRankedText(evaluation: Pick<
   return `체크리스트 지지도 ${evaluation.likelihoodSupportScore}, 응급도 ${evaluation.urgencyScore}를 함께 고려했습니다.`;
 }
 
+function explanationText({
+  diagnosisCode,
+  evidenceStatus,
+  supportingFindings,
+  findingsAgainst,
+  ruleInFindings,
+  ruleOutFindings,
+  missingKeyData
+}: {
+  diagnosisCode: DiagnosisCode;
+  evidenceStatus: EvidenceStatus;
+  supportingFindings: ChestPainRule[];
+  findingsAgainst: ChestPainRule[];
+  ruleInFindings: ChestPainRule[];
+  ruleOutFindings: ChestPainRule[];
+  missingKeyData: string[];
+}) {
+  if (evidenceStatus === "conflicting_evidence") {
+    return "상충 소견 때문에 진단 상태를 확정적으로 올리거나 내리지 않고 보류합니다.";
+  }
+  if (ruleInFindings.length > 0) {
+    return `${diagnosisCode} 확인 근거: ${ruleInFindings
+      .map((rule) => rule.labelKo)
+      .slice(0, 2)
+      .join(", ")} 선택됨.`;
+  }
+  if (ruleOutFindings.length > 0) {
+    return `${diagnosisCode} 배제 후보: ${ruleOutFindings
+      .map((rule) => rule.labelKo)
+      .slice(0, 2)
+      .join(", ")} 선택됨. 단독 확정 배제는 아니며 부족 정보: ${missingKeyData
+      .slice(0, 2)
+      .join(", ")}.`;
+  }
+  if (supportingFindings.length > 0 && findingsAgainst.length > 0) {
+    return `지지 소견과 반대 소견이 함께 있어 unresolved 상태로 재평가가 필요합니다. 지지: ${supportingFindings[0].labelKo}; 반대: ${findingsAgainst[0].labelKo}.`;
+  }
+  if (supportingFindings.length > 0) {
+    return `${diagnosisCode} 지지도 상승: ${supportingFindings
+      .map((rule) => rule.labelKo)
+      .slice(0, 3)
+      .join(", ")} 선택됨.`;
+  }
+  if (findingsAgainst.length > 0) {
+    return `${diagnosisCode} 지지도 하락: ${findingsAgainst
+      .map((rule) => rule.labelKo)
+      .slice(0, 3)
+      .join(", ")} 선택됨.`;
+  }
+  return `아직 핵심 정보가 부족합니다: ${missingKeyData.slice(0, 3).join(", ")}.`;
+}
+
 export function evaluateDiagnoses(
   findingStates: FindingStateMap
 ): DiagnosisEvaluation[] {
@@ -277,24 +329,39 @@ export function evaluateDiagnoses(
     const evaluation: DiagnosisEvaluation = {
       diagnosis,
       likelihoodSupportScore,
+      supportScore: likelihoodSupportScore,
       urgencyScore,
       evidenceStatus,
+      status: evidenceStatus,
       supportingFindings: [...new Set(supportingFindings)],
       findingsAgainst: [...new Set(findingsAgainst)],
+      againstFindings: [...new Set(findingsAgainst)],
       ruleInFindings: [...new Set(ruleInFindings)],
       ruleOutFindings: [...new Set(ruleOutFindings)],
+      ruleOutCriteriaMet: [...new Set(ruleOutFindings)],
+      ruleOutCriteriaMissing: missingKeyData,
       redFlagFindings: [...new Set(redFlagFindings)],
       missingKeyData,
       conflictWarnings,
       matchedRedFlags: [...new Set(redFlagFindings.map((rule) => rule.labelKo))],
-      urgentNextCheck:
-        urgentNextChecks[diagnosis.code] ??
+      nextDiscriminatingInformation:
+        nextDiscriminatingInfoByDiagnosis[diagnosis.code] ??
         diagnosis.confirmatoryTests[0] ??
-        "의료진 판단에 따라 필요한 확인 항목 검토",
-      whyRanked: ""
+        "감별에 필요한 추가 정보가 부족합니다.",
+      whyRanked: "",
+      explanationKo: ""
     };
 
     evaluation.whyRanked = whyRankedText(evaluation);
+    evaluation.explanationKo = explanationText({
+      diagnosisCode: diagnosis.code,
+      evidenceStatus,
+      supportingFindings: evaluation.supportingFindings,
+      findingsAgainst: evaluation.findingsAgainst,
+      ruleInFindings: evaluation.ruleInFindings,
+      ruleOutFindings: evaluation.ruleOutFindings,
+      missingKeyData: evaluation.missingKeyData
+    });
     return evaluation;
   });
 

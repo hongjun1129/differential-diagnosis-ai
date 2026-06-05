@@ -175,21 +175,34 @@ export type ConflictWarning = {
   messageKo: string;
 };
 
+export type ReasoningStage =
+  | "initial_history"
+  | "vitals_and_exam"
+  | "basic_tests"
+  | "advanced_tests"
+  | "follow_up_results";
+
 export type DiagnosisEvaluation = {
   diagnosis: Diagnosis;
   likelihoodSupportScore: number;
+  supportScore: number;
   urgencyScore: number;
   evidenceStatus: EvidenceStatus;
+  status: EvidenceStatus;
   supportingFindings: ChestPainRule[];
   findingsAgainst: ChestPainRule[];
+  againstFindings: ChestPainRule[];
   ruleInFindings: ChestPainRule[];
   ruleOutFindings: ChestPainRule[];
+  ruleOutCriteriaMet: ChestPainRule[];
+  ruleOutCriteriaMissing: string[];
   redFlagFindings: ChestPainRule[];
   missingKeyData: string[];
   conflictWarnings: ConflictWarning[];
   matchedRedFlags: string[];
-  urgentNextCheck: string;
+  nextDiscriminatingInformation: string;
   whyRanked: string;
+  explanationKo: string;
 };
 
 export type DiagnosisScore = DiagnosisEvaluation;

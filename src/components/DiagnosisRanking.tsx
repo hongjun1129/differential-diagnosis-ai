@@ -25,7 +25,7 @@ type DiagnosisRankingProps = {
 type ViewMode = "top6" | "all" | "emergency" | "rule_out" | "insufficient";
 
 const viewLabels: Record<ViewMode, string> = {
-  top6: "상위 6개",
+  top6: "초기 Working Differential",
   all: "전체 감별진단",
   emergency: "응급 배제 필요",
   rule_out: "배제 후보",
@@ -117,10 +117,10 @@ function EmergencyPanel({
                     : "현재 선택 없음"}
                 </p>
                 <p>
-                  누락 확인: {score.missingKeyData.slice(0, 2).join(", ")}
+                  아직 확인 필요: {score.missingKeyData.slice(0, 2).join(", ")}
                 </p>
                 <p className="font-semibold text-red-800">
-                  다음 확인: {score.urgentNextCheck}
+                  감별에 필요한 추가 정보: {score.nextDiscriminatingInformation}
                 </p>
               </div>
             </button>
@@ -158,10 +158,10 @@ export function DiagnosisRanking({
           <BarChart3 className="h-5 w-5 text-blue-700" aria-hidden />
           <div>
             <h2 className="text-sm font-bold text-blue-950">
-              규칙 기반 우선 검토 순위
+              초기 Working Differential
             </h2>
             <p className="text-[11px] text-slate-500">
-              체크리스트 지지도와 응급도를 분리해 정렬합니다.
+              선택 소견 기반 우선 검토 진단입니다.
             </p>
           </div>
         </div>
@@ -172,8 +172,9 @@ export function DiagnosisRanking({
 
       <div className="px-4 py-3">
         <div className="mb-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-950">
-          이 순위는 선택된 소견 기반 지지도이며 실제 질병 확률이 아닙니다.
-          응급 배제 필요 질환은 지지도와 무관하게 별도 확인해야 합니다.
+          이 목록은 선택된 소견으로 생성한 working differential입니다. 실제
+          질병 확률이 아니며, 지지도가 낮아도 응급 배제 필요 질환은 별도
+          확인해야 합니다.
         </div>
 
         <EmergencyPanel

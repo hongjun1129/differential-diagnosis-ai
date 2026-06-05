@@ -148,6 +148,49 @@ describe("clinical rule evaluation", () => {
     expect(stemi.evidenceStatus).toBe("rule_in_evidence");
   });
 
+  it("models ACS progression across staged information", () => {
+    const stage1 = byCode(evaluateDiagnoses(states(["H01", "H02"])), "NSTEMI");
+    expect(["possible", "supported"]).toContain(stage1.status);
+
+    const stage2 = byCode(
+      evaluateDiagnoses(states(["H01", "H02", "E60"])),
+      "NSTEMI"
+    );
+    expect(stage2.status).not.toBe("excluded");
+
+    const stage3 = byCode(
+      evaluateDiagnoses(states(["H01", "H02", "E52", "L62"])),
+      "NSTEMI"
+    );
+    expect(["strongly_supported", "rule_in_evidence"]).toContain(stage3.status);
+  });
+
+  it("models PE progression across staged information", () => {
+    const stage1 = byCode(evaluateDiagnoses(states(["H07", "H12"])), "PE");
+    expect(["possible", "supported"]).toContain(stage1.status);
+
+    const stage2 = byCode(
+      evaluateDiagnoses(states(["H07", "H12", "V30", "V29"])),
+      "PE"
+    );
+    expect(["supported", "strongly_supported"]).toContain(stage2.status);
+
+    const stage3 = byCode(
+      evaluateDiagnoses(states(["H07", "H12", "V30", "V29", "T98"])),
+      "PE"
+    );
+    expect(stage3.status).toBe("rule_in_evidence");
+  });
+
+  it("keeps GERD supported while ACS remains conservative after negative basic checks", () => {
+    const scores = evaluateDiagnoses(states(["H17", "G118", "E60", "L64"]));
+    expect(byCode(scores, "GERD").status).toBe("supported");
+    expect(["rule_out_candidate", "insufficient_information"]).toContain(
+      byCode(scores, "NSTEMI").status
+    );
+    expect(byCode(scores, "NSTEMI").status).not.toBe("excluded");
+  });
+
   it("does not reference undefined diagnosis codes in rule metadata", () => {
     expect(validateFindingRuleCodes()).toEqual([]);
   });
