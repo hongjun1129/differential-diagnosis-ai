@@ -10,23 +10,25 @@ export function DoctorNoteCard({ patient, onChange }: DoctorNoteCardProps) {
   return (
     <section className="h-full min-h-0 overflow-hidden rounded-lg border border-blue-200 bg-white p-2 shadow-soft">
       <div className="mb-1 flex items-center justify-between gap-2">
-        <h2 className="text-xs font-extrabold text-blue-950">의사 자유입력</h2>
+        <h2 className="text-xs font-extrabold leading-4 text-blue-950">
+          의사 자유입력
+        </h2>
         <button
           type="button"
-          className="inline-flex h-7 shrink-0 items-center gap-1 rounded-md bg-blue-700 px-2 text-[11px] font-bold text-white hover:bg-blue-800"
+          className="inline-flex h-6 shrink-0 items-center gap-1 rounded-md bg-blue-700 px-2 text-[10px] font-bold text-white hover:bg-blue-800"
           title="입력 내용은 체크리스트에 자동 반영되지 않습니다."
         >
-          <Sparkles className="h-3.5 w-3.5" aria-hidden />
+          <Sparkles className="h-3 w-3" aria-hidden />
           AI 분석 · 자동 반영
         </button>
       </div>
       <textarea
         value={patient.memo}
         onChange={(event) => onChange({ ...patient, memo: event.target.value })}
-        className="h-14 w-full resize-none rounded-md border border-blue-200 px-2 py-1.5 text-xs leading-5 text-slate-900"
+        className="h-12 w-full resize-none rounded-md border border-blue-200 px-2 py-1 text-xs leading-4 text-slate-900"
         placeholder="쥐어짜는 흉통, 운동 시 악화, ECG/검사 정보 등 의사 메모"
       />
-      <div className="mt-0.5 text-right text-[10px] font-medium text-slate-400">
+      <div className="text-right text-[10px] font-medium leading-3 text-slate-400">
         {patient.memo.length} / 1000자
       </div>
     </section>

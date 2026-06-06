@@ -211,10 +211,9 @@ export function DiagnosisDetailPanel({ score }: DiagnosisDetailPanelProps) {
         </DetailSection>
 
         <DetailSection
-          title="감소 근거"
+          title="반대 / 감소 소견"
           count={score.findingsAgainst.length}
           icon={<MinusCircle className="h-4 w-4 text-emerald-700" aria-hidden />}
-          defaultOpen
           tone="border-emerald-100 bg-emerald-50 text-emerald-950"
         >
           <RuleList

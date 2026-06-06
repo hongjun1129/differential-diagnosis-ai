@@ -69,7 +69,7 @@ export function ClinicalDashboard() {
     [scores, effectiveFindingStates]
   );
   const selectedScore =
-    topScores.find((score) => score.diagnosis.code === activeDiagnosisCode) ??
+    scores.find((score) => score.diagnosis.code === activeDiagnosisCode) ??
     topScores[0];
   const activeCode = selectedScore?.diagnosis.code;
 
@@ -98,39 +98,49 @@ export function ClinicalDashboard() {
 
   return (
     <AppShell>
-      <div className="flex min-h-full flex-col gap-3 xl:grid xl:h-full xl:min-h-0 xl:grid-cols-[340px_minmax(420px,1fr)_420px] xl:grid-rows-[116px_minmax(0,1fr)] xl:overflow-hidden">
-        <PatientSnapshotPanel
-          patient={patient}
-          vitals={vitals}
-          onPatientChange={setPatient}
-          onVitalsChange={setVitals}
-          onReset={resetAll}
-        />
+      <div className="dashboard-grid">
+        <div className="dashboard-area-patient">
+          <PatientSnapshotPanel
+            patient={patient}
+            vitals={vitals}
+            onPatientChange={setPatient}
+            onVitalsChange={setVitals}
+            onReset={resetAll}
+          />
+        </div>
 
-        <DoctorNoteCard patient={patient} onChange={setPatient} />
+        <div className="dashboard-area-note dashboard-note-stack">
+          <DoctorNoteCard patient={patient} onChange={setPatient} />
 
-        <ProblemRepresentationPanel
-          patient={patient}
-          vitals={vitals}
-          findingStates={effectiveFindingStates}
-        />
+          <ProblemRepresentationPanel
+            patient={patient}
+            vitals={vitals}
+            findingStates={effectiveFindingStates}
+          />
+        </div>
 
-        <DiagnosisRanking
-          scores={topScores}
-          emergencyScores={emergencyScores}
-          selectedFindingCount={selectedFindingCount}
-          activeCode={activeCode}
-          onSelect={setActiveDiagnosisCode}
-        />
+        <div className="dashboard-area-diagnoses">
+          <DiagnosisRanking
+            scores={topScores}
+            emergencyScores={emergencyScores}
+            selectedFindingCount={selectedFindingCount}
+            activeCode={activeCode}
+            onSelect={setActiveDiagnosisCode}
+          />
+        </div>
 
-        <DiagnosisDetailPanel score={selectedScore} />
+        <div className="dashboard-area-detail">
+          <DiagnosisDetailPanel score={selectedScore} />
+        </div>
 
-        <ChecklistPanel
-          findingStates={effectiveFindingStates}
-          autoFindingStates={autoFindingStates}
-          onSetFindingState={setFindingState}
-          onClear={() => setManualFindingStates({})}
-        />
+        <div className="dashboard-area-checklist">
+          <ChecklistPanel
+            findingStates={effectiveFindingStates}
+            autoFindingStates={autoFindingStates}
+            onSetFindingState={setFindingState}
+            onClear={() => setManualFindingStates({})}
+          />
+        </div>
       </div>
     </AppShell>
   );

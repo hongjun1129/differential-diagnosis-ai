@@ -35,8 +35,8 @@ export function PatientSnapshotPanel({
   };
 
   return (
-    <section className="h-full min-h-0 overflow-hidden rounded-lg border border-blue-200 bg-white p-2 shadow-soft">
-      <div className="mb-1 flex items-center justify-between gap-2">
+    <section className="h-full min-h-0 overflow-hidden rounded-lg border border-blue-200 bg-white p-2.5 shadow-soft">
+      <div className="mb-1.5 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-blue-700">
             <UserRound className="h-4 w-4" aria-hidden />
@@ -54,14 +54,14 @@ export function PatientSnapshotPanel({
         </button>
       </div>
 
-      <div className="grid h-[80px] min-h-0 grid-cols-[minmax(0,1fr)_116px] gap-2">
+      <div className="grid h-[96px] min-h-0 grid-cols-[minmax(0,1fr)_118px] gap-2">
         <div className="grid min-h-0 grid-cols-2 gap-1">
           <label className="min-w-0 text-[10px] font-bold text-slate-500">
             나이
             <input
               value={patient.age}
               onChange={(event) => updatePatient("age", event.target.value)}
-              className="mt-0.5 h-5 w-full rounded border border-slate-200 px-1.5 text-[11px] font-bold text-slate-900"
+              className="mt-0.5 h-6 w-full rounded border border-slate-200 px-1.5 text-xs font-bold text-slate-900"
               placeholder={missing}
             />
           </label>
@@ -70,7 +70,7 @@ export function PatientSnapshotPanel({
             <input
               value={patient.sex}
               onChange={(event) => updatePatient("sex", event.target.value)}
-              className="mt-0.5 h-5 w-full rounded border border-slate-200 px-1.5 text-[11px] font-bold text-slate-900"
+              className="mt-0.5 h-6 w-full rounded border border-slate-200 px-1.5 text-xs font-bold text-slate-900"
               placeholder={missing}
             />
           </label>
@@ -79,7 +79,7 @@ export function PatientSnapshotPanel({
             <input
               value={patient.chiefComplaint}
               onChange={(event) => updatePatient("chiefComplaint", event.target.value)}
-              className="mt-0.5 h-5 w-full rounded border border-slate-200 px-1.5 text-[11px] text-slate-900"
+              className="mt-0.5 h-6 w-full rounded border border-slate-200 px-1.5 text-xs text-slate-900"
               placeholder="확인 필요"
             />
           </label>
@@ -88,7 +88,7 @@ export function PatientSnapshotPanel({
             <input
               value={patient.onset}
               onChange={(event) => updatePatient("onset", event.target.value)}
-              className="mt-0.5 h-5 w-full rounded border border-slate-200 px-1.5 text-[11px] text-slate-900"
+              className="mt-0.5 h-6 w-full rounded border border-slate-200 px-1.5 text-xs text-slate-900"
               placeholder="확인 필요"
             />
           </label>
@@ -108,7 +108,7 @@ export function PatientSnapshotPanel({
                 <input
                   value={vitals[field.key]}
                   onChange={(event) => updateVitals(field.key, event.target.value)}
-                  className="h-[15px] min-w-0 rounded border border-slate-200 px-1 text-[10px] font-semibold text-slate-800"
+                  className="h-[18px] min-w-0 rounded border border-slate-200 px-1 text-[10px] font-semibold text-slate-800"
                   placeholder="--"
                 />
                 <span className="sr-only">{field.unit}</span>

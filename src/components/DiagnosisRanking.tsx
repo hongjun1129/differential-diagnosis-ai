@@ -7,6 +7,7 @@ import {
   emergencyMustNotMissCodes
 } from "@/data/chestPainRules";
 import type {
+  DiagnosisCode,
   DiagnosisEvaluation,
   EvidenceStatus,
   FindingStateMap
@@ -38,6 +39,26 @@ const viewStatusFilter: Partial<Record<ViewMode, EvidenceStatus[]>> = {
   supported: ["supported", "strongly_supported", "rule_in_evidence"],
   rule_out: ["rule_out_candidate", "excluded"],
   insufficient: ["insufficient_information"]
+};
+
+const compactEmergencyCodes: DiagnosisCode[] = [
+  "STEMI",
+  "NSTEMI",
+  "DIS",
+  "PE",
+  "TPTX",
+  "PERI",
+  "BOER"
+];
+
+const compactEmergencyLabels: Partial<Record<DiagnosisCode, string>> = {
+  STEMI: "STEMI",
+  NSTEMI: "NSTEMI/ACS",
+  DIS: "대동맥 박리",
+  PE: "폐색전증",
+  TPTX: "긴장성 기흉",
+  PERI: "심장압전",
+  BOER: "Boerhaave"
 };
 
 export function getTopDiagnosisScores(
@@ -80,9 +101,15 @@ function EmergencyPanel({
   activeCode?: string;
   onSelect: (code: string) => void;
 }) {
+  const orderedEmergencyScores = compactEmergencyCodes
+    .map((code) =>
+      emergencyScores.find((score) => score.diagnosis.code === code)
+    )
+    .filter((score): score is DiagnosisEvaluation => Boolean(score));
+
   return (
     <section className="shrink-0 border-t border-red-100 bg-red-50/70">
-      <div className="flex items-center justify-between gap-2 px-3 py-2">
+      <div className="flex items-center justify-between gap-2 px-3 py-1.5">
         <div className="flex items-center gap-1.5">
           <AlertTriangle className="h-3.5 w-3.5 text-red-700" aria-hidden />
           <h3 className="text-xs font-extrabold text-red-950">
@@ -94,8 +121,8 @@ function EmergencyPanel({
         </span>
       </div>
 
-      <div className="grid max-h-44 gap-1.5 overflow-y-auto px-2 pb-2">
-        {emergencyScores.slice(0, 5).map((score) => {
+      <div className="grid gap-1 overflow-y-auto px-2 pb-2">
+        {orderedEmergencyScores.map((score) => {
           const active = activeCode === score.diagnosis.code;
           const tone = evidenceStatusTone[score.evidenceStatus];
 
@@ -104,27 +131,30 @@ function EmergencyPanel({
               key={score.diagnosis.code}
               type="button"
               onClick={() => onSelect(score.diagnosis.code)}
-              className={`rounded-md border bg-white px-2 py-1.5 text-left text-[11px] transition ${
+              className={`grid min-h-[28px] grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-md border bg-white px-2 py-1 text-left text-[11px] transition ${
                 active
                   ? "border-red-300 ring-2 ring-red-100"
                   : "border-red-100 hover:border-red-200"
               }`}
             >
-              <div className="flex items-center justify-between gap-2">
-                <span className="min-w-0 truncate font-bold text-slate-950">
-                  {emergencyDisplayNames[score.diagnosis.code] ??
-                    score.diagnosis.nameKo}
-                </span>
+              <span className="min-w-0 truncate font-bold text-slate-950">
+                {compactEmergencyLabels[score.diagnosis.code] ??
+                  emergencyDisplayNames[score.diagnosis.code] ??
+                  score.diagnosis.nameKo}
+              </span>
+              <span className="flex shrink-0 items-center gap-1">
                 <span
-                  className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-bold ${tone.className}`}
+                  className={`rounded border px-1.5 py-0.5 text-[10px] font-bold ${tone.className}`}
                 >
                   {evidenceStatusLabels[score.evidenceStatus]}
                 </span>
-              </div>
-              <p className="mt-0.5 truncate text-[10px] text-slate-500">
-                Red flag {score.matchedRedFlags.length} · 미확인{" "}
-                {score.missingKeyData.length}
-              </p>
+                <span className="text-[10px] font-semibold text-slate-500">
+                  red {score.matchedRedFlags.length}
+                </span>
+                <span className="text-[10px] font-semibold text-slate-500">
+                  miss {score.missingKeyData.length}
+                </span>
+              </span>
             </button>
           );
         })}
@@ -204,12 +234,12 @@ export function DiagnosisRanking({
               key={score.diagnosis.code}
               type="button"
               onClick={() => onSelect(score.diagnosis.code)}
-              className={`grid min-h-[52px] w-full grid-cols-[26px_minmax(0,1fr)_86px] items-center gap-2 px-3 py-2 text-left transition ${
+              className={`grid min-h-[40px] w-full grid-cols-[24px_minmax(0,1fr)_82px] items-center gap-2 px-3 py-1.5 text-left transition ${
                 active ? "bg-blue-50" : "bg-white hover:bg-slate-50"
               }`}
             >
               <span
-                className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold ${
+                className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
                   active
                     ? "bg-blue-700 text-white"
                     : "bg-slate-100 text-slate-600"
@@ -222,11 +252,10 @@ export function DiagnosisRanking({
                 <span className="block truncate text-sm font-bold text-slate-950">
                   {score.diagnosis.nameKo}
                 </span>
-                <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-slate-500">
+                <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px] text-slate-500">
                   <span>지지 {score.supportingFindings.length}</span>
                   <span>감소 {score.findingsAgainst.length}</span>
                   <span>rule-in {score.ruleInFindings.length}</span>
-                  <span>red {score.redFlagFindings.length}</span>
                 </span>
               </span>
 
