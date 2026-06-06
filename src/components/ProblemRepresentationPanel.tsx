@@ -1,7 +1,6 @@
 import { FileText, Layers3 } from "lucide-react";
 import { getActiveRules } from "@/lib/scoring";
 import type { FindingCategory, FindingStateMap, PatientInfo, VitalSigns } from "@/types/clinical";
-import { findingCategoryLabels } from "@/utils/categoryLabels";
 
 type ProblemRepresentationPanelProps = {
   patient: PatientInfo;
@@ -14,35 +13,23 @@ const stageDefinitions: Array<{
   title: string;
   categories: FindingCategory[];
 }> = [
-  {
-    id: "initial_history",
-    title: "1단계: 초기 문진/증상",
-    categories: ["history"]
-  },
-  {
-    id: "vitals_and_exam",
-    title: "2단계: 활력징후/신체진찰",
-    categories: ["vital", "physical"]
-  },
-  {
-    id: "basic_tests",
-    title: "3단계: 기본 검사",
-    categories: ["ecg", "lab"]
-  },
+  { id: "initial_history", title: "초기 문진", categories: ["history"] },
+  { id: "vitals_and_exam", title: "활력/진찰", categories: ["vital", "physical"] },
+  { id: "basic_tests", title: "기본 검사", categories: ["ecg", "lab"] },
   {
     id: "advanced_tests",
-    title: "4단계: 추가 검사",
+    title: "추가 검사",
     categories: ["cardiac_imaging", "thoracic_imaging", "gi_test"]
   },
   {
     id: "follow_up_results",
-    title: "5단계: 진단 상태 업데이트",
+    title: "상태 업데이트",
     categories: ["msk_neuro_skin", "psych_functional"]
   }
 ];
 
 function compactJoin(items: string[], fallback: string) {
-  return items.length > 0 ? items.slice(0, 3).join(" / ") : fallback;
+  return items.length > 0 ? items.slice(0, 2).join(" / ") : fallback;
 }
 
 function vitalSummary(vitals: VitalSigns) {
@@ -54,7 +41,7 @@ function vitalSummary(vitals: VitalSigns) {
     vitals.bt ? `BT ${vitals.bt}` : ""
   ].filter(Boolean);
 
-  return parts.length > 0 ? parts.join(", ") : "활력징후 미입력";
+  return parts.length > 0 ? parts.join(", ") : "활력징후 일부 미입력";
 }
 
 export function ProblemRepresentationPanel({
@@ -69,18 +56,8 @@ export function ProblemRepresentationPanel({
   const historyLabels = presentRules
     .filter((rule) => rule.category === "history")
     .map((rule) => rule.labelKo);
-  const ecgLabels = presentRules
-    .filter((rule) => rule.category === "ecg")
-    .map((rule) => rule.labelKo);
-  const labLabels = presentRules
-    .filter((rule) => rule.category === "lab")
-    .map((rule) => rule.labelKo);
-  const imagingLabels = presentRules
-    .filter((rule) =>
-      ["cardiac_imaging", "thoracic_imaging", "gi_test"].includes(
-        rule.category
-      )
-    )
+  const testLabels = presentRules
+    .filter((rule) => ["ecg", "lab", "cardiac_imaging", "thoracic_imaging"].includes(rule.category))
     .map((rule) => rule.labelKo);
 
   const ageSex =
@@ -91,62 +68,52 @@ export function ProblemRepresentationPanel({
   const representation = [
     ageSex,
     patient.chiefComplaint || "주호소 미입력",
-    patient.onset || "증상 시작 시점 확인 필요",
+    patient.onset || "증상 시작 확인 필요",
     compactJoin(historyLabels, "통증 양상/동반 증상 확인 필요"),
     vitalSummary(vitals),
-    `ECG: ${compactJoin(ecgLabels, "정보 미입력")}`,
-    `혈액검사: ${compactJoin(labLabels, "정보 미입력")}`,
-    `영상/추가검사: ${compactJoin(imagingLabels, "정보 미입력")}`
+    compactJoin(testLabels, "ECG/검사 정보 미입력")
   ].join(" / ");
 
   return (
-    <section className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <div className="rounded-lg border border-blue-200 bg-white p-3 shadow-soft">
-        <div className="mb-2 flex items-center gap-2">
+    <section className="h-full min-h-0 rounded-lg border border-blue-200 bg-white p-2 shadow-soft">
+      <div className="mb-1.5 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5">
           <FileText className="h-4 w-4 text-blue-700" aria-hidden />
-          <h2 className="text-sm font-extrabold text-blue-950">
+          <h2 className="text-xs font-extrabold text-blue-950">
             Problem Representation
           </h2>
         </div>
-        <p className="rounded-md bg-blue-50 px-3 py-2 text-sm font-semibold leading-6 text-blue-950">
-          문제 표현: {representation}
-        </p>
-        <p className="mt-2 text-[11px] leading-4 text-slate-500">
-          미입력 항목은 정상으로 가정하지 않습니다. 확인 필요 정보로 남겨
-          working differential을 업데이트합니다.
-        </p>
+        <details className="relative text-[11px]">
+          <summary className="cursor-pointer font-bold text-blue-700">
+            자세히
+          </summary>
+          <div className="absolute right-0 top-6 z-20 w-80 rounded-lg border border-blue-100 bg-white p-3 text-xs leading-5 text-slate-700 shadow-soft">
+            문제 표현: {representation}
+          </div>
+        </details>
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-soft">
-        <div className="mb-2 flex items-center gap-2">
-          <Layers3 className="h-4 w-4 text-blue-700" aria-hidden />
-          <h2 className="text-sm font-extrabold text-blue-950">
-            단계별 추론 입력
-          </h2>
-        </div>
-        <div className="grid gap-1.5">
+      <p className="line-clamp-2 rounded-md bg-blue-50 px-2 py-1.5 text-xs font-semibold leading-5 text-blue-950">
+        문제 표현: {representation}
+      </p>
+
+      <div className="mt-1.5 flex items-center gap-1.5 overflow-hidden">
+        <Layers3 className="h-3.5 w-3.5 shrink-0 text-blue-700" aria-hidden />
+        <div className="flex min-w-0 flex-1 gap-1 overflow-x-auto">
           {stageDefinitions.map((stage) => {
             const count = activeRules.filter((rule) =>
               stage.categories.includes(rule.category)
             ).length;
             return (
-              <div
+              <span
                 key={stage.id}
-                className="flex items-center justify-between rounded-md bg-slate-50 px-2.5 py-1.5 text-xs"
+                className="shrink-0 rounded-md bg-slate-100 px-1.5 py-1 text-[10px] font-bold text-slate-600"
               >
-                <span className="font-semibold text-slate-700">
-                  {stage.title}
-                </span>
-                <span className="rounded bg-white px-2 py-0.5 font-bold text-blue-700">
-                  {count}개
-                </span>
-              </div>
+                {stage.title} {count}
+              </span>
             );
           })}
         </div>
-        <p className="mt-2 text-[11px] text-slate-500">
-          분류 기준: {Object.values(findingCategoryLabels).join(", ")}
-        </p>
       </div>
     </section>
   );

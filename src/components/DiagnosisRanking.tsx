@@ -1,10 +1,12 @@
 "use client";
 
-import { AlertTriangle, BarChart3, ChevronRight, Eye, EyeOff } from "lucide-react";
+import { AlertTriangle, BarChart3, ChevronRight, EyeOff } from "lucide-react";
 import { useMemo, useState } from "react";
-import { emergencyDisplayNames, emergencyMustNotMissCodes } from "@/data/chestPainRules";
+import {
+  emergencyDisplayNames,
+  emergencyMustNotMissCodes
+} from "@/data/chestPainRules";
 import type {
-  DiagnosisCode,
   DiagnosisEvaluation,
   EvidenceStatus,
   FindingStateMap
@@ -22,17 +24,18 @@ type DiagnosisRankingProps = {
   onSelect: (code: string) => void;
 };
 
-type ViewMode = "top6" | "all" | "emergency" | "rule_out" | "insufficient";
+type ViewMode = "top6" | "emergency" | "supported" | "rule_out" | "insufficient";
 
 const viewLabels: Record<ViewMode, string> = {
-  top6: "초기 Working Differential",
-  all: "전체 감별진단",
-  emergency: "응급 배제 필요",
-  rule_out: "배제 후보",
+  top6: "상위 6개",
+  emergency: "응급",
+  supported: "지지",
+  rule_out: "배제",
   insufficient: "정보 부족"
 };
 
 const viewStatusFilter: Partial<Record<ViewMode, EvidenceStatus[]>> = {
+  supported: ["supported", "strongly_supported", "rule_in_evidence"],
   rule_out: ["rule_out_candidate", "excluded"],
   insufficient: ["insufficient_information"]
 };
@@ -75,54 +78,53 @@ function EmergencyPanel({
 }: {
   emergencyScores: DiagnosisEvaluation[];
   activeCode?: string;
-  onSelect: (code: DiagnosisCode) => void;
+  onSelect: (code: string) => void;
 }) {
   return (
-    <section className="rounded-lg border border-red-200 bg-red-50/60">
-      <div className="flex items-center gap-2 border-b border-red-100 px-3 py-2">
-        <AlertTriangle className="h-4 w-4 text-red-700" aria-hidden />
-        <h3 className="text-sm font-extrabold text-red-950">
-          응급 배제 필요 질환
-        </h3>
+    <section className="shrink-0 border-t border-red-100 bg-red-50/70">
+      <div className="flex items-center justify-between gap-2 px-3 py-2">
+        <div className="flex items-center gap-1.5">
+          <AlertTriangle className="h-3.5 w-3.5 text-red-700" aria-hidden />
+          <h3 className="text-xs font-extrabold text-red-950">
+            응급 배제 필요
+          </h3>
+        </div>
+        <span className="text-[10px] font-bold text-red-700">
+          must-not-miss
+        </span>
       </div>
-      <div className="grid gap-2 p-2">
-        {emergencyScores.map((score) => {
+
+      <div className="grid max-h-44 gap-1.5 overflow-y-auto px-2 pb-2">
+        {emergencyScores.slice(0, 5).map((score) => {
+          const active = activeCode === score.diagnosis.code;
           const tone = evidenceStatusTone[score.evidenceStatus];
+
           return (
             <button
               key={score.diagnosis.code}
               type="button"
               onClick={() => onSelect(score.diagnosis.code)}
-              className={`rounded-md border bg-white px-2.5 py-2 text-left text-xs transition ${
-                activeCode === score.diagnosis.code
+              className={`rounded-md border bg-white px-2 py-1.5 text-left text-[11px] transition ${
+                active
                   ? "border-red-300 ring-2 ring-red-100"
                   : "border-red-100 hover:border-red-200"
               }`}
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="font-bold text-slate-950">
-                  {emergencyDisplayNames[score.diagnosis.code]}
+                <span className="min-w-0 truncate font-bold text-slate-950">
+                  {emergencyDisplayNames[score.diagnosis.code] ??
+                    score.diagnosis.nameKo}
                 </span>
                 <span
-                  className={`rounded border px-1.5 py-0.5 text-[10px] font-bold ${tone.className}`}
+                  className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-bold ${tone.className}`}
                 >
                   {evidenceStatusLabels[score.evidenceStatus]}
                 </span>
               </div>
-              <div className="mt-1 grid gap-1 text-[11px] leading-4 text-slate-600">
-                <p>
-                  red flag:{" "}
-                  {score.matchedRedFlags.length > 0
-                    ? score.matchedRedFlags.slice(0, 2).join(", ")
-                    : "현재 선택 없음"}
-                </p>
-                <p>
-                  아직 확인 필요: {score.missingKeyData.slice(0, 2).join(", ")}
-                </p>
-                <p className="font-semibold text-red-800">
-                  감별에 필요한 추가 정보: {score.nextDiscriminatingInformation}
-                </p>
-              </div>
+              <p className="mt-0.5 truncate text-[10px] text-slate-500">
+                Red flag {score.matchedRedFlags.length} · 미확인{" "}
+                {score.missingKeyData.length}
+              </p>
             </button>
           );
         })}
@@ -141,64 +143,50 @@ export function DiagnosisRanking({
   const [viewMode, setViewMode] = useState<ViewMode>("top6");
   const visibleScores = useMemo(() => {
     if (viewMode === "top6") return scores;
-    if (viewMode === "emergency") return emergencyScores;
+    if (viewMode === "emergency") return emergencyScores.slice(0, 6);
     const allowedStatuses = viewStatusFilter[viewMode];
-    if (allowedStatuses) {
-      return scores.filter((score) =>
-        allowedStatuses.includes(score.evidenceStatus)
-      );
-    }
-    return scores;
+    if (!allowedStatuses) return scores;
+
+    const filtered = scores.filter((score) =>
+      allowedStatuses.includes(score.evidenceStatus)
+    );
+    return filtered.length > 0 ? filtered : scores;
   }, [emergencyScores, scores, viewMode]);
 
   return (
-    <section className="rounded-lg border border-blue-200 bg-white shadow-soft">
-      <div className="flex items-center justify-between gap-3 border-b border-blue-100 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5 text-blue-700" aria-hidden />
-          <div>
-            <h2 className="text-sm font-bold text-blue-950">
-              초기 Working Differential
-            </h2>
-            <p className="text-[11px] text-slate-500">
-              선택 소견 기반 우선 검토 진단입니다.
-            </p>
+    <section className="flex h-full min-h-[420px] flex-col overflow-hidden rounded-lg border border-blue-200 bg-white shadow-soft xl:min-h-0">
+      <div className="shrink-0 border-b border-blue-100 px-3 py-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <BarChart3 className="h-4 w-4 shrink-0 text-blue-700" aria-hidden />
+            <div className="min-w-0">
+              <h2 className="truncate text-sm font-extrabold text-blue-950">
+                감별진단 우선순위
+              </h2>
+              <p className="truncate text-[11px] text-slate-500">
+                선택 소견 기반 working differential
+              </p>
+            </div>
           </div>
-        </div>
-        <span className="rounded-md bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">
-          기록 {selectedFindingCount}개
-        </span>
-      </div>
-
-      <div className="px-4 py-3">
-        <div className="mb-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-950">
-          이 목록은 선택된 소견으로 생성한 working differential입니다. 실제
-          질병 확률이 아니며, 지지도가 낮아도 응급 배제 필요 질환은 별도
-          확인해야 합니다.
+          <span className="shrink-0 rounded-md bg-blue-50 px-2 py-1 text-[11px] font-bold text-blue-700">
+            기록 {selectedFindingCount}
+          </span>
         </div>
 
-        <EmergencyPanel
-          emergencyScores={emergencyScores}
-          activeCode={activeCode}
-          onSelect={onSelect}
-        />
-
-        <div className="mt-3 flex flex-wrap gap-1.5">
+        <div className="mt-2 flex gap-1 overflow-x-auto">
           {(Object.keys(viewLabels) as ViewMode[]).map((mode) => (
             <button
               key={mode}
               type="button"
               onClick={() => setViewMode(mode)}
-              className={`inline-flex h-8 items-center gap-1 rounded-md border px-2.5 text-xs font-bold ${
+              className={`inline-flex h-7 shrink-0 items-center gap-1 rounded-md border px-2 text-[11px] font-bold ${
                 viewMode === mode
                   ? "border-blue-600 bg-blue-700 text-white"
                   : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
               }`}
             >
-              {mode === "all" ? (
-                <Eye className="h-3.5 w-3.5" aria-hidden />
-              ) : mode === "top6" ? (
-                <EyeOff className="h-3.5 w-3.5" aria-hidden />
+              {mode === "top6" ? (
+                <EyeOff className="h-3 w-3" aria-hidden />
               ) : null}
               {viewLabels[mode]}
             </button>
@@ -206,8 +194,8 @@ export function DiagnosisRanking({
         </div>
       </div>
 
-      <div className="divide-y divide-slate-100">
-        {visibleScores.map((score, index) => {
+      <div className="min-h-0 flex-1 divide-y divide-slate-100 overflow-y-auto">
+        {visibleScores.slice(0, 6).map((score, index) => {
           const active = activeCode === score.diagnosis.code;
           const tone = evidenceStatusTone[score.evidenceStatus];
 
@@ -216,12 +204,12 @@ export function DiagnosisRanking({
               key={score.diagnosis.code}
               type="button"
               onClick={() => onSelect(score.diagnosis.code)}
-              className={`grid w-full grid-cols-[34px_1fr_94px] items-center gap-3 px-4 py-3 text-left transition sm:grid-cols-[34px_1fr_110px_92px] ${
+              className={`grid min-h-[52px] w-full grid-cols-[26px_minmax(0,1fr)_86px] items-center gap-2 px-3 py-2 text-left transition ${
                 active ? "bg-blue-50" : "bg-white hover:bg-slate-50"
               }`}
             >
               <span
-                className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
+                className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold ${
                   active
                     ? "bg-blue-700 text-white"
                     : "bg-slate-100 text-slate-600"
@@ -234,33 +222,45 @@ export function DiagnosisRanking({
                 <span className="block truncate text-sm font-bold text-slate-950">
                   {score.diagnosis.nameKo}
                 </span>
-                <span className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
-                  <span>지지도 {score.likelihoodSupportScore}</span>
-                  <span>응급도 {score.urgencyScore}</span>
+                <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-slate-500">
+                  <span>지지 {score.supportingFindings.length}</span>
+                  <span>감소 {score.findingsAgainst.length}</span>
                   <span>rule-in {score.ruleInFindings.length}</span>
-                  <span>red flag {score.redFlagFindings.length}</span>
+                  <span>red {score.redFlagFindings.length}</span>
                 </span>
               </span>
 
-              <span
-                className={`justify-self-start rounded-md border px-2 py-1 text-[11px] font-bold ${tone.className}`}
-              >
-                {evidenceStatusLabels[score.evidenceStatus]}
-              </span>
-
-              <span className="hidden items-center gap-2 sm:flex">
-                <span className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
-                  <span
-                    className={`block h-full rounded-full ${tone.barClassName}`}
-                    style={{ width: supportWidth(score.likelihoodSupportScore) }}
+              <span className="min-w-0">
+                <span
+                  className={`block truncate rounded border px-1.5 py-0.5 text-center text-[10px] font-bold ${tone.className}`}
+                >
+                  {evidenceStatusLabels[score.evidenceStatus]}
+                </span>
+                <span className="mt-1 flex items-center gap-1">
+                  <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+                    <span
+                      className={`block h-full rounded-full ${tone.barClassName}`}
+                      style={{
+                        width: supportWidth(score.likelihoodSupportScore)
+                      }}
+                    />
+                  </span>
+                  <ChevronRight
+                    className="h-3.5 w-3.5 shrink-0 text-slate-400"
+                    aria-hidden
                   />
                 </span>
-                <ChevronRight className="h-4 w-4 text-slate-400" aria-hidden />
               </span>
             </button>
           );
         })}
       </div>
+
+      <EmergencyPanel
+        emergencyScores={emergencyScores}
+        activeCode={activeCode}
+        onSelect={onSelect}
+      />
     </section>
   );
 }

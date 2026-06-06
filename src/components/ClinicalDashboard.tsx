@@ -8,6 +8,7 @@ import {
   DiagnosisRanking,
   getTopDiagnosisScores
 } from "@/components/DiagnosisRanking";
+import { DoctorNoteCard } from "@/components/DoctorNoteCard";
 import { PatientSnapshotPanel } from "@/components/PatientSnapshotPanel";
 import { ProblemRepresentationPanel } from "@/components/ProblemRepresentationPanel";
 import {
@@ -97,7 +98,7 @@ export function ClinicalDashboard() {
 
   return (
     <AppShell>
-      <div className="space-y-4">
+      <div className="flex min-h-full flex-col gap-3 xl:grid xl:h-full xl:min-h-0 xl:grid-cols-[340px_minmax(420px,1fr)_420px] xl:grid-rows-[116px_minmax(0,1fr)] xl:overflow-hidden">
         <PatientSnapshotPanel
           patient={patient}
           vitals={vitals}
@@ -106,31 +107,30 @@ export function ClinicalDashboard() {
           onReset={resetAll}
         />
 
+        <DoctorNoteCard patient={patient} onChange={setPatient} />
+
         <ProblemRepresentationPanel
           patient={patient}
           vitals={vitals}
           findingStates={effectiveFindingStates}
         />
 
-        <div className="grid gap-4 xl:grid-cols-[minmax(420px,0.92fr)_minmax(520px,1.08fr)]">
-          <div className="space-y-4">
-            <DiagnosisRanking
-              scores={topScores}
-              emergencyScores={emergencyScores}
-              selectedFindingCount={selectedFindingCount}
-              activeCode={activeCode}
-              onSelect={setActiveDiagnosisCode}
-            />
-            <DiagnosisDetailPanel score={selectedScore} />
-          </div>
+        <DiagnosisRanking
+          scores={topScores}
+          emergencyScores={emergencyScores}
+          selectedFindingCount={selectedFindingCount}
+          activeCode={activeCode}
+          onSelect={setActiveDiagnosisCode}
+        />
 
-          <ChecklistPanel
-            findingStates={effectiveFindingStates}
-            autoFindingStates={autoFindingStates}
-            onSetFindingState={setFindingState}
-            onClear={() => setManualFindingStates({})}
-          />
-        </div>
+        <DiagnosisDetailPanel score={selectedScore} />
+
+        <ChecklistPanel
+          findingStates={effectiveFindingStates}
+          autoFindingStates={autoFindingStates}
+          onSetFindingState={setFindingState}
+          onClear={() => setManualFindingStates({})}
+        />
       </div>
     </AppShell>
   );

@@ -1,51 +1,51 @@
-import { Activity, Github, Stethoscope } from "lucide-react";
 import type { ReactNode } from "react";
 import { SafetyBanner } from "@/components/SafetyBanner";
 import { Sidebar } from "@/components/Sidebar";
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#eef5fb]">
-      <div className="flex min-h-screen">
+    <div className="min-h-screen bg-slate-100 xl:h-screen xl:w-screen xl:overflow-hidden">
+      <div className="xl:grid xl:h-screen xl:grid-cols-[80px_minmax(0,1fr)] xl:overflow-hidden">
         <Sidebar />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <header className="border-b border-clinical-line bg-white/95 px-4 py-3 sm:px-5">
-            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-700 text-white lg:hidden">
-                  <Stethoscope className="h-5 w-5" aria-hidden />
-                </div>
-                <div>
-                  <h1 className="text-lg font-extrabold tracking-normal text-clinical-ink sm:text-xl">
-                    흉통 감별진단 체크리스트 보조 AI
-                  </h1>
-                  <p className="mt-1 max-w-4xl text-xs leading-5 text-clinical-muted">
-                    주요 단서 기반 감별진단을 구조화하여 의료진이 위험질환을
-                    빠뜨리지 않고 체계적으로 배제하도록 돕는 서비스
-                  </p>
-                </div>
+        <div className="min-w-0 xl:flex xl:h-screen xl:min-h-0 xl:flex-col xl:overflow-hidden">
+          <header className="border-b border-blue-100 bg-white/95 px-3 py-2 xl:h-12 xl:shrink-0">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <h1 className="truncate text-base font-extrabold text-slate-950">
+                  흉통 감별진단 체크리스트 보조 AI
+                </h1>
+                <p className="hidden truncate text-[11px] text-slate-500 sm:block">
+                  의료진 보조용 규칙 기반 임상 추론 프로토타입
+                </p>
               </div>
-              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                <span className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2">
-                  <Activity className="h-3.5 w-3.5 text-blue-600" aria-hidden />
-                  client-side
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2">
-                  <Github className="h-3.5 w-3.5 text-slate-700" aria-hidden />
-                  editable rules
-                </span>
+              <div className="hidden max-w-2xl flex-1 xl:block">
+                <SafetyBanner compact />
               </div>
-            </div>
-            <div className="mt-3">
-              <SafetyBanner />
+              <span className="shrink-0 rounded-md border border-blue-100 bg-blue-50 px-2 py-1 text-[11px] font-bold text-blue-700">
+                prototype
+              </span>
             </div>
           </header>
 
-          <main className="flex-1 px-4 py-4 sm:px-5">{children}</main>
+          <main className="min-h-0 flex-1 overflow-y-auto px-3 py-3 pb-16 md:pb-3 xl:overflow-hidden">
+            {children}
+          </main>
 
-          <footer className="border-t border-clinical-line bg-white px-4 py-3 text-center text-xs text-slate-500">
-            사진, 치료, 처방, 검사 결정은 자동화하지 않습니다. 의료진 검토와
-            승인 없이 환자 설명문으로 사용하지 마십시오.
+          <footer className="hidden h-8 shrink-0 items-center justify-between border-t border-blue-100 bg-white px-3 text-[11px] text-slate-500 xl:flex">
+            <span>
+              의료진 보조용 규칙 기반 도구입니다. 실제 확률이나 확정 진단이
+              아닙니다.
+            </span>
+            <details className="relative">
+              <summary className="cursor-pointer font-bold text-blue-700">
+                자세한 설명 보기
+              </summary>
+              <div className="absolute bottom-6 right-0 z-30 w-[520px] rounded-lg border border-blue-100 bg-white p-3 text-xs leading-5 text-slate-700 shadow-soft">
+                AI가 진단을 대신하는 것이 아닙니다. 치료, 처방, 검사 결정은
+                자동화하지 않습니다. 의료진의 판단과 최신 진료지침을 우선해야
+                합니다.
+              </div>
+            </details>
           </footer>
         </div>
       </div>
