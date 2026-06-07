@@ -6,6 +6,7 @@ import { FindingGroup } from "@/components/FindingGroup";
 import { chestPainRules } from "@/data/chestPainRules";
 import { detectConflicts, getActiveRules } from "@/lib/scoring";
 import type {
+  ChecklistStateMap,
   FindingCategory,
   FindingState,
   FindingStateMap
@@ -18,6 +19,7 @@ import {
 type ChecklistPanelProps = {
   findingStates: FindingStateMap;
   autoFindingStates: FindingStateMap;
+  checklistState: ChecklistStateMap;
   onSetFindingState: (id: string, state: FindingState) => void;
   onClear: () => void;
 };
@@ -51,6 +53,7 @@ const shortCategoryLabels: Record<FindingCategory, string> = {
 export function ChecklistPanel({
   findingStates,
   autoFindingStates,
+  checklistState,
   onSetFindingState,
   onClear
 }: ChecklistPanelProps) {
@@ -226,6 +229,7 @@ export function ChecklistPanel({
           findings={activeCategoryRules}
           findingStates={findingStates}
           autoFindingStates={autoFindingStates}
+          checklistState={checklistState}
           onSetFindingState={onSetFindingState}
         />
         {activeCategoryRules.length === 0 ? (

@@ -102,10 +102,11 @@ export function getAutoVitalFindingStates(vitals: VitalSigns): FindingStateMap {
   const bt = normalizeNumeric(vitals.bt);
 
   if (sbp !== undefined && sbp < 90) states.V28 = "present";
-  if (hr !== undefined && hr > 100) states.V30 = "present";
-  if (spo2 !== undefined && spo2 < 92) states.V29 = "present";
+  if (hr !== undefined && hr >= 100) states.V30 = "present";
+  if (hr !== undefined && hr < 50) states.V156 = "present";
+  if (rr !== undefined && rr >= 22) states.V157 = "present";
+  if (spo2 !== undefined && spo2 < 94) states.V29 = "present";
   if (bt !== undefined && bt >= 38) states.V31 = "present";
-  if (rr !== undefined && rr >= 24) states.H12 = "present";
 
   return states;
 }

@@ -237,6 +237,102 @@ const historyRules: FindingRule[] = [
     NSTEMI: -1,
     PE: -1,
     DIS: -1
+  }),
+  r("H156", "실신 또는 전실신", "history", {
+    ARR: 2,
+    AS: 1,
+    HCM: 1,
+    PE: 1,
+    DIS: 1,
+    STEMI: 1,
+    NSTEMI: 1
+  }),
+  r("H157", "오심 또는 구토", "history", {
+    STEMI: 1,
+    NSTEMI: 1,
+    PANC: 1,
+    CHOLE: 1,
+    GERD: 1,
+    PANIC: 1
+  }),
+  r("H158", "하지 부종", "history", {
+    AHF: 2,
+    PE: 1,
+    PH: 1
+  }),
+  r("H159", "편측 하지 통증 또는 부종", "history", {
+    PE: 2,
+    PH: 1
+  }),
+  r("H160", "최근 수술, 장거리 이동 또는 부동", "history", {
+    PE: 2,
+    T2MI: 1,
+    PNA: 1
+  }),
+  r("H161", "임신 또는 산욕기", "history", {
+    PE: 2,
+    DIS: 1,
+    T2MI: 1
+  }),
+  r("H162", "흡연", "history", {
+    STEMI: 1,
+    NSTEMI: 1,
+    SA_CCD: 1,
+    VSA: 1,
+    LUNGCA: 1
+  }),
+  r("H163", "고혈압", "history", {
+    STEMI: 1,
+    NSTEMI: 1,
+    SA_CCD: 1,
+    DIS: 1,
+    TAA: 1,
+    AHF: 1
+  }),
+  r("H164", "당뇨", "history", {
+    STEMI: 1,
+    NSTEMI: 1,
+    SA_CCD: 1,
+    INOCA: 1
+  }),
+  r("H165", "고지혈증", "history", {
+    STEMI: 1,
+    NSTEMI: 1,
+    SA_CCD: 1
+  }),
+  r("H166", "관상동맥질환 또는 PCI/CABG 과거력", "history", {
+    STEMI: 1,
+    NSTEMI: 1,
+    UA: 1,
+    SA_CCD: 2,
+    T2MI: 1
+  }),
+  r("H167", "대동맥질환 과거력", "history", {
+    DIS: 1,
+    IMH: 1,
+    PAU: 1,
+    TAA: 2
+  }),
+  r("H168", "혈전색전증 과거력", "history", {
+    PE: 2,
+    PH: 1
+  }),
+  r("H169", "가족력: 심근경색, 급사, 대동맥질환", "history", {
+    STEMI: 1,
+    NSTEMI: 1,
+    SA_CCD: 1,
+    DIS: 1,
+    TAA: 1,
+    HCM: 1,
+    ARR: 1
+  }),
+  r("H170", "식은땀", "history", {
+    STEMI: 1,
+    NSTEMI: 1,
+    UA: 1,
+    PE: 1,
+    DIS: 1,
+    PANIC: 1
   })
 ];
 
@@ -300,6 +396,20 @@ const vitalPhysicalRules: FindingRule[] = [
     STEMI: -1,
     NSTEMI: -1,
     UA: -1
+  }),
+  r("V156", "서맥", "vital", {
+    ARR: 2,
+    STEMI: 1,
+    T2MI: 1
+  }),
+  r("V157", "빈호흡", "vital", {
+    PE: 2,
+    PNA: 2,
+    PTX: 1,
+    TPTX: 2,
+    AHF: 1,
+    ASTH_COPD: 1,
+    HVS: 1
   }),
   r(
     "P32",
@@ -459,7 +569,18 @@ const ecgRules: FindingRule[] = [
     NSTEMI: -1,
     UA: -1,
     PERI: -1
-  })
+  }),
+  r(
+    "E156",
+    "new LBBB 또는 새 좌각차단",
+    "ecg",
+    {
+      STEMI: 2,
+      NSTEMI: 1,
+      T2MI: 1
+    },
+    { redFlagFor: ["STEMI"] }
+  ),
 ];
 
 const labRules: FindingRule[] = [
@@ -721,6 +842,18 @@ const thoracicImagingRules: FindingRule[] = [
     EMP: 1,
     LUNGCA: 1
   }),
+  r(
+    "T156",
+    "CXR에서 widened mediastinum",
+    "thoracic_imaging",
+    {
+      DIS: 2,
+      IMH: 1,
+      PAU: 1,
+      TAA: 1
+    },
+    { redFlagFor: ["DIS", "IMH", "TAA"] }
+  ),
   r("T106", "CXR 정상, 감염 증상 없음", "thoracic_imaging", {
     PNA: -1,
     EMP: -1,

@@ -1,0 +1,23 @@
+export const clinicalSynonyms = {
+  dyspnea: ["호흡곤란", "숨참", "숨이 참", "숨이 차", "dyspnea", "SOB", "shortness of breath"],
+  chestPain: ["흉통", "가슴통증", "가슴 통증", "chest pain", "CP"],
+  stElevation: ["ST 상승", "ST elevation", "STE", "STEMI"],
+  troponin: ["트로포닌", "troponin", "TnI", "TnT", "hs-troponin"],
+  dDimer: ["D-dimer", "d dimer", "디다이머"],
+  bloodPressure: ["혈압", "BP", "SBP", "DBP"],
+  oxygenSaturation: ["산소포화도", "SpO2", "saturation", "O2 sat"],
+  cough: ["기침", "cough"],
+  sputum: ["객담", "가래", "sputum", "phlegm"],
+  fever: ["발열", "열", "fever", "BT", "Temp"],
+  hemoptysis: ["객혈", "hemoptysis", "haemoptysis"],
+  syncope: ["실신", "전실신", "syncope", "presyncope"],
+  diaphoresis: ["식은땀", "diaphoresis", "cold sweat"],
+  nauseaVomiting: ["오심", "구토", "nausea", "vomiting", "emesis"],
+  pleuriticPain: ["흡기 시 악화", "기침 때 악화", "pleuritic", "pleuritic pain"],
+  tearingPain: ["찢어지는", "tear-like", "tearing", "ripping"],
+  backRadiation: ["등으로", "견갑골", "back radiation", "interscapular"],
+  chestWallTenderness: ["흉벽 압통", "누르면", "reproducible", "tenderness"],
+  pneumothorax: ["기흉", "pneumothorax", "PTX"],
+  pulmonaryEmbolism: ["폐색전증", "pulmonary embolism", "PE"],
+  dissection: ["대동맥 박리", "aortic dissection", "dissection"]
+} as const;

@@ -1,6 +1,8 @@
 import { Check, Minus, RotateCcw } from "lucide-react";
+import { EvidenceBadge } from "@/components/EvidenceBadge";
 import { isTriStateRule } from "@/data/chestPainRules";
 import type {
+  ChecklistStateMap,
   ChestPainRule,
   FindingCategory,
   FindingState
@@ -15,6 +17,7 @@ type FindingGroupProps = {
   findings: ChestPainRule[];
   findingStates: Partial<Record<string, FindingState>>;
   autoFindingStates: Partial<Record<string, FindingState>>;
+  checklistState: ChecklistStateMap;
   onSetFindingState: (id: string, state: FindingState) => void;
 };
 
@@ -30,6 +33,7 @@ export function FindingGroup({
   findings,
   findingStates,
   autoFindingStates,
+  checklistState,
   onSetFindingState
 }: FindingGroupProps) {
   if (findings.length === 0) return null;
@@ -75,6 +79,7 @@ export function FindingGroup({
                       자동
                     </span>
                   ) : null}
+                  <EvidenceBadge value={checklistState[finding.id]} />
                 </div>
                 <p className="mt-0.5 truncate text-[10px] text-slate-400">
                   {finding.effectType} · {finding.evidenceLevel} ·{" "}

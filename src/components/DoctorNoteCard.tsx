@@ -4,9 +4,10 @@ import type { PatientInfo } from "@/types/clinical";
 type DoctorNoteCardProps = {
   patient: PatientInfo;
   onChange: (patient: PatientInfo) => void;
+  onAnalyze: () => void;
 };
 
-export function DoctorNoteCard({ patient, onChange }: DoctorNoteCardProps) {
+export function DoctorNoteCard({ patient, onChange, onAnalyze }: DoctorNoteCardProps) {
   return (
     <section className="h-full min-h-0 overflow-hidden rounded-lg border border-blue-200 bg-white p-2 shadow-soft">
       <div className="mb-1 flex items-center justify-between gap-2">
@@ -15,11 +16,13 @@ export function DoctorNoteCard({ patient, onChange }: DoctorNoteCardProps) {
         </h2>
         <button
           type="button"
+          onClick={onAnalyze}
+          disabled={patient.memo.trim().length === 0}
           className="inline-flex h-6 shrink-0 items-center gap-1 rounded-md bg-blue-700 px-2 text-[10px] font-bold text-white hover:bg-blue-800"
-          title="입력 내용은 체크리스트에 자동 반영되지 않습니다."
+          title="외부 API 전송 없이 브라우저 안에서 규칙 기반으로 분석합니다."
         >
           <Sparkles className="h-3 w-3" aria-hidden />
-          AI 분석 · 자동 반영
+          자유입력 분석
         </button>
       </div>
       <textarea

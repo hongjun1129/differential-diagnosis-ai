@@ -98,6 +98,89 @@ export type FindingState = "unknown" | "present" | "absent";
 
 export type FindingStateMap = Partial<Record<string, FindingState>>;
 
+export type ChecklistStatus = FindingState;
+
+export type ChecklistSource =
+  | "manual"
+  | "free_text_parser"
+  | "vital_parser"
+  | "lab_parser"
+  | "test_parser"
+  | "system";
+
+export type ClinicalContext =
+  | "current_symptom"
+  | "past_history"
+  | "family_history"
+  | "risk_factor"
+  | "test_result"
+  | "hypothesis"
+  | "unknown";
+
+export type ChecklistPatch = {
+  itemId: string;
+  status: ChecklistStatus;
+  source: ChecklistSource;
+  evidenceText: string;
+  confidence: number;
+  context: ClinicalContext;
+  reason: string;
+  negated?: boolean;
+  sentenceIndex?: number;
+  start?: number;
+  end?: number;
+  isRedFlag?: boolean;
+  requiresConfirmation: boolean;
+};
+
+export type ChecklistStateValue = {
+  status: ChecklistStatus;
+  source: ChecklistSource;
+  evidenceText?: string;
+  confidence?: number;
+  updatedAt: string;
+  manuallyOverridden?: boolean;
+  context?: ClinicalContext;
+};
+
+export type ChecklistStateMap = Partial<Record<string, ChecklistStateValue>>;
+
+export type ChecklistNlpConceptType =
+  | "symptom"
+  | "vital"
+  | "physical"
+  | "ecg"
+  | "lab"
+  | "imaging"
+  | "risk_factor"
+  | "history";
+
+export type ChecklistNlpRule = {
+  itemId: string;
+  labelKo: string;
+  labelEn?: string;
+  conceptType: ChecklistNlpConceptType;
+  conceptId: string;
+  patterns: RegExp[];
+  synonyms: string[];
+  negatable: boolean;
+  defaultContext: ClinicalContext;
+  redFlag?: boolean;
+  autoApplyThreshold: number;
+  previewThreshold: number;
+};
+
+export type ChecklistPatchConflict = {
+  itemId: string;
+  labelKo: string;
+  patches: ChecklistPatch[];
+  messageKo: string;
+};
+
+export type ClinicalTextAnalyzer = {
+  analyze(text: string): ChecklistPatch[];
+};
+
 export type EvidenceLevel =
   | "weak"
   | "moderate"

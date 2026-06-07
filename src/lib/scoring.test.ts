@@ -139,7 +139,7 @@ describe("clinical rule evaluation", () => {
       V30: "present",
       V29: "present",
       V31: "present",
-      H12: "present"
+      V157: "present"
     });
   });
 
