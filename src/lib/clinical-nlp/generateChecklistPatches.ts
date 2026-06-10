@@ -23,7 +23,7 @@ function patchFromMatch(match: RuleMatch): ChecklistPatch {
   return {
     itemId: match.rule.itemId,
     status,
-    source: "free_text_parser",
+    source: "rule_parser",
     evidenceText: match.sentence.text,
     confidence,
     context,
@@ -44,7 +44,9 @@ const sourcePriority: Record<ChecklistSource, number> = {
   test_parser: 5,
   lab_parser: 5,
   vital_parser: 5,
+  rule_parser: 4,
   free_text_parser: 3,
+  llm_extractor: 2,
   system: 2,
   manual: 1
 };

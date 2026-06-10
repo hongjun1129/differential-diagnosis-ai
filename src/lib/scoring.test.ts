@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { diseaseRegistry } from "@/data/diseaseRegistry";
+import { diagnoses } from "@/data/diagnoses";
 import {
   calculateDiagnosisScores,
   detectConflicts,
@@ -77,6 +79,12 @@ const scenarioFixtures: Array<{
 ];
 
 describe("clinical rule evaluation", () => {
+  it("evaluates every disease in the canonical registry", () => {
+    const scores = evaluateDiagnoses({});
+    expect(diseaseRegistry).toHaveLength(diagnoses.length);
+    expect(scores).toHaveLength(diseaseRegistry.length);
+  });
+
   it("keeps must-not-miss diagnoses visible in the emergency panel", () => {
     const emergency = getEmergencyEvaluations(evaluateDiagnoses({}));
     expect(emergency.map((item) => item.diagnosis.code)).toEqual([

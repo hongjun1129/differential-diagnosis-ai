@@ -102,11 +102,19 @@ export type ChecklistStatus = FindingState;
 
 export type ChecklistSource =
   | "manual"
+  | "rule_parser"
   | "free_text_parser"
+  | "llm_extractor"
   | "vital_parser"
   | "lab_parser"
   | "test_parser"
   | "system";
+
+export type ClinicalAssertion =
+  | "present"
+  | "absent"
+  | "uncertain"
+  | "hypothesis";
 
 export type ClinicalContext =
   | "current_symptom"
@@ -114,6 +122,8 @@ export type ClinicalContext =
   | "family_history"
   | "risk_factor"
   | "test_result"
+  | "medication"
+  | "procedure"
   | "hypothesis"
   | "unknown";
 
@@ -124,6 +134,7 @@ export type ChecklistPatch = {
   evidenceText: string;
   confidence: number;
   context: ClinicalContext;
+  assertion?: ClinicalAssertion;
   reason: string;
   negated?: boolean;
   sentenceIndex?: number;
@@ -179,6 +190,64 @@ export type ChecklistPatchConflict = {
 
 export type ClinicalTextAnalyzer = {
   analyze(text: string): ChecklistPatch[];
+};
+
+export type ExtractedFinding = {
+  findingId: string;
+  normalizedText: string;
+  originalText: string;
+  assertion: ClinicalAssertion;
+  context: ClinicalContext;
+  confidence: number;
+  evidenceText: string;
+};
+
+export type DiseaseCandidateRelation =
+  | "supports"
+  | "against"
+  | "rule_in_possible"
+  | "rule_out_possible"
+  | "must_not_miss_consider"
+  | "insufficient_information";
+
+export type DiseaseCandidate = {
+  diseaseId: string;
+  relation: DiseaseCandidateRelation;
+  confidence: number;
+  evidenceText: string;
+  reason: string;
+  requiresConfirmation: boolean;
+};
+
+export type MissingQuestion = {
+  question: string;
+  reason: string;
+  relatedDiseaseIds: string[];
+  priority: "high" | "medium" | "low";
+};
+
+export type ClinicalContradiction = {
+  targetId: string;
+  evidenceA: string;
+  evidenceB: string;
+  explanation: string;
+  requiresUserReview: true;
+};
+
+export type SafetyWarning = {
+  type: "red_flag" | "uncertain_diagnosis" | "insufficient_data" | "conflict";
+  message: string;
+  relatedDiseaseIds: string[];
+};
+
+export type ClinicalExtractionResult = {
+  extractedFindings: ExtractedFinding[];
+  checklistPatches: ChecklistPatch[];
+  diseaseCandidates: DiseaseCandidate[];
+  missingQuestions: MissingQuestion[];
+  contradictions: ClinicalContradiction[];
+  safetyWarnings: SafetyWarning[];
+  summary?: string;
 };
 
 export type EvidenceLevel =

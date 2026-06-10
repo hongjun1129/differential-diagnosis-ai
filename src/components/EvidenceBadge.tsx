@@ -6,7 +6,9 @@ type EvidenceBadgeProps = {
 
 const sourceLabels: Record<ChecklistSource, string> = {
   manual: "수동 입력",
+  rule_parser: "규칙 parser",
   free_text_parser: "자유입력 parser",
+  llm_extractor: "LLM 구조화 추출",
   vital_parser: "활력징후 parser",
   lab_parser: "검사 parser",
   test_parser: "검사 parser",

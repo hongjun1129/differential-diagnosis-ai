@@ -1,12 +1,13 @@
 "use client";
 
-import { AlertTriangle, BarChart3, ChevronRight, EyeOff } from "lucide-react";
+import { AlertTriangle, BarChart3, ChevronRight, ListFilter } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   emergencyDisplayNames,
   emergencyMustNotMissCodes
 } from "@/data/chestPainRules";
 import type {
+  DiagnosisCategory,
   DiagnosisCode,
   DiagnosisEvaluation,
   EvidenceStatus,
@@ -25,20 +26,45 @@ type DiagnosisRankingProps = {
   onSelect: (code: string) => void;
 };
 
-type ViewMode = "top6" | "emergency" | "supported" | "rule_out" | "insufficient";
+type ViewMode =
+  | "top6"
+  | "emergency"
+  | "supported"
+  | "rule_out"
+  | "insufficient"
+  | "cardiovascular"
+  | "pulmonary_pleural"
+  | "gastrointestinal"
+  | "musculoskeletal_neuro_skin"
+  | "psychiatric_functional"
+  | "all";
 
 const viewLabels: Record<ViewMode, string> = {
-  top6: "상위 6개",
-  emergency: "응급",
-  supported: "지지",
+  top6: "상위 6",
+  emergency: "응급/Red flag",
+  supported: "지지됨",
   rule_out: "배제",
-  insufficient: "정보 부족"
+  insufficient: "정보 부족",
+  cardiovascular: "심혈관",
+  pulmonary_pleural: "폐/흉막",
+  gastrointestinal: "위장관",
+  musculoskeletal_neuro_skin: "근골격",
+  psychiatric_functional: "정신/기능",
+  all: "전체"
 };
 
 const viewStatusFilter: Partial<Record<ViewMode, EvidenceStatus[]>> = {
   supported: ["supported", "strongly_supported", "rule_in_evidence"],
   rule_out: ["rule_out_candidate", "excluded"],
   insufficient: ["insufficient_information"]
+};
+
+const categoryFilters: Partial<Record<ViewMode, DiagnosisCategory[]>> = {
+  cardiovascular: ["cardiac", "aortic"],
+  pulmonary_pleural: ["pulmonary_pleural"],
+  gastrointestinal: ["gastrointestinal"],
+  musculoskeletal_neuro_skin: ["musculoskeletal_neuro_skin"],
+  psychiatric_functional: ["psychiatric_functional"]
 };
 
 const compactEmergencyCodes: DiagnosisCode[] = [
@@ -58,7 +84,7 @@ const compactEmergencyLabels: Partial<Record<DiagnosisCode, string>> = {
   PE: "폐색전증",
   TPTX: "긴장성 기흉",
   PERI: "심장압전",
-  BOER: "Boerhaave"
+  BOER: "식도파열"
 };
 
 export function getTopDiagnosisScores(
@@ -172,16 +198,30 @@ export function DiagnosisRanking({
 }: DiagnosisRankingProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("top6");
   const visibleScores = useMemo(() => {
-    if (viewMode === "top6") return scores;
-    if (viewMode === "emergency") return emergencyScores.slice(0, 6);
-    const allowedStatuses = viewStatusFilter[viewMode];
-    if (!allowedStatuses) return scores;
+    if (viewMode === "top6") {
+      return selectedFindingCount === 0
+        ? emergencyScores.slice(0, 6)
+        : scores.slice(0, 6);
+    }
+    if (viewMode === "emergency") return emergencyScores;
+    if (viewMode === "all") return scores;
 
-    const filtered = scores.filter((score) =>
-      allowedStatuses.includes(score.evidenceStatus)
-    );
-    return filtered.length > 0 ? filtered : scores;
-  }, [emergencyScores, scores, viewMode]);
+    const allowedStatuses = viewStatusFilter[viewMode];
+    if (allowedStatuses) {
+      return scores.filter((score) =>
+        allowedStatuses.includes(score.evidenceStatus)
+      );
+    }
+
+    const categories = categoryFilters[viewMode];
+    if (categories) {
+      return scores.filter((score) =>
+        categories.includes(score.diagnosis.category)
+      );
+    }
+
+    return scores.slice(0, 6);
+  }, [emergencyScores, scores, selectedFindingCount, viewMode]);
 
   return (
     <section className="flex h-full min-h-[420px] flex-col overflow-hidden rounded-lg border border-blue-200 bg-white shadow-soft xl:min-h-0">
@@ -194,7 +234,7 @@ export function DiagnosisRanking({
                 감별진단 우선순위
               </h2>
               <p className="truncate text-[11px] text-slate-500">
-                선택 소견 기반 working differential
+                기본은 상위 6개만 표시, 전체 탭에서 모든 감별진단 확인
               </p>
             </div>
           </div>
@@ -215,37 +255,59 @@ export function DiagnosisRanking({
                   : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
               }`}
             >
-              {mode === "top6" ? (
-                <EyeOff className="h-3 w-3" aria-hidden />
+              {mode === "all" ? (
+                <ListFilter className="h-3 w-3" aria-hidden />
               ) : null}
               {viewLabels[mode]}
             </button>
           ))}
         </div>
+
+        <div className="mt-2 flex items-center justify-between text-[10px] font-semibold text-slate-500">
+          <span>
+            표시 {visibleScores.length} / 전체 {scores.length}
+          </span>
+          <button
+            type="button"
+            onClick={() => setViewMode("all")}
+            className="font-bold text-blue-700 hover:text-blue-900"
+          >
+            전체 감별진단 보기
+          </button>
+        </div>
       </div>
 
       <div className="min-h-0 flex-1 divide-y divide-slate-100 overflow-y-auto">
-        {visibleScores.slice(0, 6).map((score, index) => {
+        {visibleScores.length === 0 ? (
+          <p className="px-3 py-6 text-center text-xs font-semibold text-slate-500">
+            현재 필터에 해당하는 감별진단이 없습니다.
+          </p>
+        ) : null}
+
+        {visibleScores.map((score) => {
           const active = activeCode === score.diagnosis.code;
           const tone = evidenceStatusTone[score.evidenceStatus];
+          const rank = scores.findIndex(
+            (item) => item.diagnosis.code === score.diagnosis.code
+          ) + 1;
 
           return (
             <button
               key={score.diagnosis.code}
               type="button"
               onClick={() => onSelect(score.diagnosis.code)}
-              className={`grid min-h-[40px] w-full grid-cols-[24px_minmax(0,1fr)_82px] items-center gap-2 px-3 py-1.5 text-left transition ${
+              className={`grid min-h-[44px] w-full grid-cols-[28px_minmax(0,1fr)_92px] items-center gap-2 px-3 py-1.5 text-left transition ${
                 active ? "bg-blue-50" : "bg-white hover:bg-slate-50"
               }`}
             >
               <span
-                className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
+                className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ${
                   active
                     ? "bg-blue-700 text-white"
                     : "bg-slate-100 text-slate-600"
                 }`}
               >
-                {index + 1}
+                {rank}
               </span>
 
               <span className="min-w-0">
@@ -253,7 +315,7 @@ export function DiagnosisRanking({
                   {score.diagnosis.nameKo}
                 </span>
                 <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px] text-slate-500">
-                  <span>지지 {score.supportingFindings.length}</span>
+                  <span>상승 {score.supportingFindings.length}</span>
                   <span>감소 {score.findingsAgainst.length}</span>
                   <span>rule-in {score.ruleInFindings.length}</span>
                 </span>

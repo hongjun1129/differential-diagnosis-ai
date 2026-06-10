@@ -12,6 +12,8 @@ const contextPatterns: Record<ClinicalContext, RegExp[]> = {
     /검사|영상|상승|음성|양성|확인|소견/i
   ],
   past_history: [/과거력|병력|이전|예전|수년\s*전|previously|history of|s\/p|PCI|CABG|수술력/i],
+  medication: [/약|복용|투약|aspirin|nitro|heparin|DOAC|warfarin|항응고|항혈소판/i],
+  procedure: [/시술|수술|PCI|CABG|stent|스텐트|삽관|흉관|ERCP|내시경/i],
   risk_factor: [
     /흡연|당뇨|고혈압|고지혈증|비만|임신|산욕기|장거리|비행|부동|최근\s*수술/i,
     /smok|diabetes|HTN|HLD|pregnan|postpartum|immobil/i
@@ -32,6 +34,8 @@ export function detectClinicalContext(
   if (matches(contextPatterns.hypothesis, sentence)) return "hypothesis";
   if (matches(contextPatterns.test_result, sentence)) return "test_result";
   if (matches(contextPatterns.past_history, sentence)) return "past_history";
+  if (matches(contextPatterns.medication, sentence)) return "medication";
+  if (matches(contextPatterns.procedure, sentence)) return "procedure";
   if (matches(contextPatterns.risk_factor, sentence)) return "risk_factor";
   if (matches(contextPatterns.current_symptom, sentence)) return "current_symptom";
   return fallback;

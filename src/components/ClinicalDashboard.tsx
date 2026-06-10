@@ -11,7 +11,8 @@ import {
 } from "@/components/DiagnosisRanking";
 import { DoctorNoteCard } from "@/components/DoctorNoteCard";
 import { PatientSnapshotPanel } from "@/components/PatientSnapshotPanel";
-import { ProblemRepresentationPanel } from "@/components/ProblemRepresentationPanel";
+import { chestPainRules } from "@/data/chestPainRules";
+import { getDiseaseShortlistForNote } from "@/data/diseaseRegistry";
 import {
   resolveConflicts,
   RuleBasedClinicalTextAnalyzer
@@ -26,6 +27,7 @@ import type {
   ChecklistPatch,
   ChecklistPatchConflict,
   ChecklistStateMap,
+  ClinicalExtractionResult,
   FindingState,
   FindingStateMap,
   PatientInfo,
@@ -49,16 +51,67 @@ const emptyVitals: VitalSigns = {
   bt: ""
 };
 
+type PreviewResult = {
+  patches: ChecklistPatch[];
+  conflicts: ChecklistPatchConflict[];
+  extraction?: ClinicalExtractionResult;
+  apiError?: string;
+  cached?: boolean;
+};
+
+type AnalyzeClinicalNoteResponse = {
+  ok: boolean;
+  cached?: boolean;
+  error?: string;
+  result?: ClinicalExtractionResult;
+};
+
+const checklistItemsForExtraction = chestPainRules.map((rule) => ({
+  itemId: rule.id,
+  labelKo: rule.labelKo,
+  category: rule.category
+}));
+
+const sourcePriority = {
+  test_parser: 6,
+  lab_parser: 6,
+  vital_parser: 6,
+  rule_parser: 5,
+  free_text_parser: 5,
+  llm_extractor: 4,
+  system: 2,
+  manual: 1
+} satisfies Record<ChecklistPatch["source"], number>;
+
+function mergeExtractorPatches(
+  rulePatches: ChecklistPatch[],
+  llmPatches: ChecklistPatch[]
+) {
+  const byKey = new Map<string, ChecklistPatch>();
+  for (const patch of [...rulePatches, ...llmPatches]) {
+    const key = `${patch.itemId}:${patch.status}:${patch.evidenceText}`;
+    const current = byKey.get(key);
+    if (
+      !current ||
+      sourcePriority[patch.source] > sourcePriority[current.source] ||
+      (sourcePriority[patch.source] === sourcePriority[current.source] &&
+        patch.confidence > current.confidence)
+    ) {
+      byKey.set(key, patch);
+    }
+  }
+
+  return [...byKey.values()];
+}
+
 export function ClinicalDashboard() {
   const [patient, setPatient] = useState<PatientInfo>(emptyPatient);
   const [vitals, setVitals] = useState<VitalSigns>(emptyVitals);
   const [manualFindingStates, setManualFindingStates] =
     useState<FindingStateMap>({});
   const [checklistState, setChecklistState] = useState<ChecklistStateMap>({});
-  const [previewResult, setPreviewResult] = useState<{
-    patches: ChecklistPatch[];
-    conflicts: ChecklistPatchConflict[];
-  }>();
+  const [previewResult, setPreviewResult] = useState<PreviewResult>();
+  const [isAnalyzingNote, setIsAnalyzingNote] = useState(false);
   const [activeDiagnosisCode, setActiveDiagnosisCode] = useState<string>();
   const analyzer = useMemo(() => new RuleBasedClinicalTextAnalyzer(), []);
 
@@ -118,9 +171,64 @@ export function ClinicalDashboard() {
     setActiveDiagnosisCode(undefined);
   };
 
-  const analyzeFreeText = () => {
-    const patches = analyzer.analyze(patient.memo);
-    setPreviewResult(resolveConflicts(patches));
+  const analyzeFreeText = async () => {
+    const freeText = patient.memo.trim();
+    if (!freeText) return;
+
+    setIsAnalyzingNote(true);
+    const rulePatches = analyzer.analyze(freeText);
+    let extraction: ClinicalExtractionResult | undefined;
+    let apiError: string | undefined;
+    let cached = false;
+
+    try {
+      const response = await fetch("/api/analyze-clinical-note", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          freeText,
+          patientContext: {
+            age: patient.age,
+            sex: patient.sex,
+            chiefComplaint: patient.chiefComplaint,
+            onset: patient.onset,
+            riskFactors: patient.riskFactors,
+            vitals
+          },
+          checklistItems: checklistItemsForExtraction,
+          diseaseShortlist: getDiseaseShortlistForNote(freeText, 40)
+        })
+      });
+      const payload =
+        (await response.json().catch(() => undefined)) as
+          | AnalyzeClinicalNoteResponse
+          | undefined;
+
+      if (response.ok && payload?.ok && payload.result) {
+        extraction = payload.result;
+        cached = Boolean(payload.cached);
+      } else {
+        apiError =
+          payload?.error ??
+          "LLM structured extraction is unavailable. Showing rule-based candidates only.";
+      }
+    } catch {
+      apiError =
+        "LLM structured extraction is unavailable. Showing rule-based candidates only.";
+    } finally {
+      setIsAnalyzingNote(false);
+    }
+
+    const mergedPatches = mergeExtractorPatches(
+      rulePatches,
+      extraction?.checklistPatches ?? []
+    );
+    setPreviewResult({
+      ...resolveConflicts(mergedPatches),
+      extraction,
+      apiError,
+      cached
+    });
   };
 
   const applyPreviewPatches = (patches: ChecklistPatch[]) => {
@@ -172,24 +280,18 @@ export function ClinicalDashboard() {
           />
         </div>
 
-        <div className="dashboard-area-note dashboard-note-stack">
+        <div className="dashboard-area-note">
           <DoctorNoteCard
             patient={patient}
             onChange={setPatient}
             onAnalyze={analyzeFreeText}
-          />
-
-          <ProblemRepresentationPanel
-            patient={patient}
-            vitals={vitals}
-            findingStates={effectiveFindingStates}
-            checklistState={checklistState}
+            isAnalyzing={isAnalyzingNote}
           />
         </div>
 
         <div className="dashboard-area-diagnoses">
           <DiagnosisRanking
-            scores={topScores}
+            scores={scores}
             emergencyScores={emergencyScores}
             selectedFindingCount={selectedFindingCount}
             activeCode={activeCode}
@@ -219,6 +321,9 @@ export function ClinicalDashboard() {
         <AutoApplyPreviewModal
           patches={previewResult.patches}
           conflicts={previewResult.conflicts}
+          extraction={previewResult.extraction}
+          apiError={previewResult.apiError}
+          cached={previewResult.cached}
           checklistState={checklistState}
           onApply={applyPreviewPatches}
           onClose={() => setPreviewResult(undefined)}
