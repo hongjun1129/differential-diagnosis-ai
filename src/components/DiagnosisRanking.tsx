@@ -39,8 +39,11 @@ type ViewMode =
   | "psychiatric_functional"
   | "all";
 
+export const DEFAULT_TOP_DIAGNOSIS_COUNT = 12;
+export const DEFAULT_TOP_DIAGNOSIS_LABEL = `상위 ${DEFAULT_TOP_DIAGNOSIS_COUNT}`;
+
 const viewLabels: Record<ViewMode, string> = {
-  top6: "상위 6",
+  top6: DEFAULT_TOP_DIAGNOSIS_LABEL,
   emergency: "응급/Red flag",
   supported: "지지됨",
   rule_out: "배제",
@@ -90,7 +93,7 @@ const compactEmergencyLabels: Partial<Record<DiagnosisCode, string>> = {
 export function getTopDiagnosisScores(
   scores: DiagnosisEvaluation[],
   findingStates: FindingStateMap,
-  count = 6
+  count = DEFAULT_TOP_DIAGNOSIS_COUNT
 ) {
   const activeStateCount = Object.values(findingStates).filter(
     (state) => state === "present" || state === "absent"
@@ -200,8 +203,8 @@ export function DiagnosisRanking({
   const visibleScores = useMemo(() => {
     if (viewMode === "top6") {
       return selectedFindingCount === 0
-        ? emergencyScores.slice(0, 6)
-        : scores.slice(0, 6);
+        ? emergencyScores.slice(0, DEFAULT_TOP_DIAGNOSIS_COUNT)
+        : scores.slice(0, DEFAULT_TOP_DIAGNOSIS_COUNT);
     }
     if (viewMode === "emergency") return emergencyScores;
     if (viewMode === "all") return scores;
@@ -220,11 +223,11 @@ export function DiagnosisRanking({
       );
     }
 
-    return scores.slice(0, 6);
+    return scores.slice(0, DEFAULT_TOP_DIAGNOSIS_COUNT);
   }, [emergencyScores, scores, selectedFindingCount, viewMode]);
 
   return (
-    <section className="flex h-full min-h-[420px] flex-col overflow-hidden rounded-lg border border-blue-200 bg-white shadow-soft xl:min-h-0">
+    <section className="flex h-full min-h-[560px] flex-col overflow-hidden rounded-lg border border-blue-200 bg-white shadow-soft xl:min-h-0">
       <div className="shrink-0 border-b border-blue-100 px-3 py-2">
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
@@ -234,7 +237,7 @@ export function DiagnosisRanking({
                 감별진단 우선순위
               </h2>
               <p className="truncate text-[11px] text-slate-500">
-                기본은 상위 6개만 표시, 전체 탭에서 모든 감별진단 확인
+                기본은 {DEFAULT_TOP_DIAGNOSIS_LABEL}개 표시, 전체 탭에서 모든 감별진단 확인
               </p>
             </div>
           </div>

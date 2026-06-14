@@ -53,7 +53,6 @@ select:focus-visible {
   gap: 0.75rem;
 }
 
-.dashboard-area-patient,
 .dashboard-area-note,
 .dashboard-area-checklist,
 .dashboard-area-diagnoses,
@@ -62,50 +61,34 @@ select:focus-visible {
   min-height: 0;
 }
 
-@media (min-width: 768px) and (max-width: 1279px) {
-  .dashboard-grid {
-    display: grid;
-    grid-template-columns: minmax(280px, 0.9fr) minmax(360px, 1.1fr);
-    gap: 0.75rem;
-  }
+.dashboard-area-note {
+  grid-area: note;
+}
 
-  .dashboard-area-checklist {
-    grid-row: span 2;
-  }
+.dashboard-area-checklist {
+  grid-area: checklist;
+}
+
+.dashboard-area-diagnoses {
+  grid-area: diagnoses;
+}
+
+.dashboard-area-detail {
+  grid-area: detail;
 }
 
 @media (min-width: 1280px) {
   .dashboard-grid {
     display: grid;
-    height: calc(100vh - 56px);
+    height: 100%;
     min-height: 0;
-    grid-template-columns: 320px minmax(0, 1fr) 420px;
-    grid-template-rows: 240px minmax(0, 1fr);
+    grid-template-columns: minmax(280px, 0.72fr) minmax(420px, 1.18fr) minmax(420px, 1.25fr);
+    grid-template-rows: 188px minmax(0, 1fr);
     grid-template-areas:
-      "patient note checklist"
-      "diagnoses detail checklist";
+      "note diagnoses detail"
+      "checklist diagnoses detail";
     gap: 12px;
     overflow: hidden;
     padding: 12px;
-  }
-
-  .dashboard-area-patient {
-    grid-area: patient;
-  }
-
-  .dashboard-area-note {
-    grid-area: note;
-  }
-
-  .dashboard-area-checklist {
-    grid-area: checklist;
-  }
-
-  .dashboard-area-diagnoses {
-    grid-area: diagnoses;
-  }
-
-  .dashboard-area-detail {
-    grid-area: detail;
   }
 }

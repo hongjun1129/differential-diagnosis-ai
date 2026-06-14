@@ -6,11 +6,12 @@ import { AutoApplyPreviewModal } from "@/components/AutoApplyPreviewModal";
 import { ChecklistPanel } from "@/components/ChecklistPanel";
 import { DiagnosisDetailPanel } from "@/components/DiagnosisDetailPanel";
 import {
+  DEFAULT_TOP_DIAGNOSIS_COUNT,
   DiagnosisRanking,
   getTopDiagnosisScores
 } from "@/components/DiagnosisRanking";
 import { DoctorNoteCard } from "@/components/DoctorNoteCard";
-import { PatientSnapshotPanel } from "@/components/PatientSnapshotPanel";
+import { TopPatientBar } from "@/components/TopPatientBar";
 import { chestPainRules } from "@/data/chestPainRules";
 import { getDiseaseShortlistForNote } from "@/data/diseaseRegistry";
 import {
@@ -35,6 +36,7 @@ import type {
 } from "@/types/clinical";
 
 const emptyPatient: PatientInfo = {
+  name: "",
   age: "",
   sex: "",
   chiefComplaint: "",
@@ -132,7 +134,12 @@ export function ClinicalDashboard() {
     [scores]
   );
   const topScores = useMemo(
-    () => getTopDiagnosisScores(scores, effectiveFindingStates, 6),
+    () =>
+      getTopDiagnosisScores(
+        scores,
+        effectiveFindingStates,
+        DEFAULT_TOP_DIAGNOSIS_COUNT
+      ),
     [scores, effectiveFindingStates]
   );
   const selectedScore =
@@ -188,11 +195,13 @@ export function ClinicalDashboard() {
         body: JSON.stringify({
           freeText,
           patientContext: {
+            name: patient.name ?? "",
             age: patient.age,
             sex: patient.sex,
             chiefComplaint: patient.chiefComplaint,
             onset: patient.onset,
             riskFactors: patient.riskFactors,
+            doctorNote: freeText,
             vitals
           },
           checklistItems: checklistItemsForExtraction,
@@ -268,18 +277,18 @@ export function ClinicalDashboard() {
   ).length;
 
   return (
-    <AppShell>
+    <AppShell
+      topBarContent={
+        <TopPatientBar
+          patient={patient}
+          vitals={vitals}
+          onPatientChange={setPatient}
+          onVitalsChange={setVitals}
+          onReset={resetAll}
+        />
+      }
+    >
       <div className="dashboard-grid">
-        <div className="dashboard-area-patient">
-          <PatientSnapshotPanel
-            patient={patient}
-            vitals={vitals}
-            onPatientChange={setPatient}
-            onVitalsChange={setVitals}
-            onReset={resetAll}
-          />
-        </div>
-
         <div className="dashboard-area-note">
           <DoctorNoteCard
             patient={patient}

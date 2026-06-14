@@ -121,7 +121,7 @@ export function DiagnosisDetailPanel({ score }: DiagnosisDetailPanelProps) {
   const tone = evidenceStatusTone[score.evidenceStatus];
 
   return (
-    <aside className="flex h-full min-h-[520px] flex-col overflow-hidden rounded-lg border border-blue-200 bg-white shadow-soft xl:min-h-0">
+    <aside className="flex h-full min-h-[620px] flex-col overflow-hidden rounded-lg border border-blue-200 bg-white shadow-soft xl:min-h-0">
       <div className="sticky top-0 z-10 shrink-0 border-b border-blue-100 bg-white px-4 py-3">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">

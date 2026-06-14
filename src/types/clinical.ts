@@ -496,6 +496,7 @@ export type DiagnosisEvaluation = {
 export type DiagnosisScore = DiagnosisEvaluation;
 
 export type PatientInfo = {
+  name?: string;
   age: string;
   sex: string;
   chiefComplaint: string;

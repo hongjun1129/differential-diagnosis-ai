@@ -6,6 +6,7 @@ import {
   redFlagGates,
   scoreItems
 } from "@/data/clinicalChecklistData";
+import { chestPainRuleById } from "@/data/chestPainRules";
 import { diseaseRegistry } from "@/data/diseaseRegistry";
 import { diagnoses, diagnosisCodeByV12No } from "@/data/diagnoses";
 import { findingRules } from "@/data/findingRules";
@@ -13,8 +14,10 @@ import {
   calculateDiagnosisScores,
   detectConflicts,
   evaluateDiagnoses,
+  AUTO_VITAL_FINDING_IDS,
   getAutoVitalFindingStates,
   getEmergencyEvaluations,
+  mergeFindingStates,
   validateFindingRuleCodes
 } from "@/lib/scoring";
 import type { DiagnosisCode, DiagnosisEvaluation, FindingStateMap } from "@/types/clinical";
@@ -188,11 +191,77 @@ describe("clinical rule evaluation", () => {
       })
     ).toEqual({
       V28: "present",
+      "AK-195": "present",
       V30: "present",
       V29: "present",
+      "AK-185": "present",
       V31: "present",
-      V157: "present"
+      V157: "present",
+      "AK-004": "present"
     });
+  });
+
+  it("keeps hard-coded vital checklist IDs available", () => {
+    for (const id of Object.values(AUTO_VITAL_FINDING_IDS)) {
+      expect(chestPainRuleById.has(id), id).toBe(true);
+    }
+  });
+
+  it("auto-maps BP thresholds for hypertension and severe BP", () => {
+    const blankVitals = { bp: "", hr: "", rr: "", spo2: "", bt: "" };
+
+    expect(
+      getAutoVitalFindingStates({ ...blankVitals, bp: "139/89" })
+    ).not.toHaveProperty(AUTO_VITAL_FINDING_IDS.hypertension);
+    expect(getAutoVitalFindingStates({ ...blankVitals, bp: "140/90" })).toEqual(
+      expect.objectContaining({
+        [AUTO_VITAL_FINDING_IDS.hypertension]: "present"
+      })
+    );
+    expect(getAutoVitalFindingStates({ ...blankVitals, bp: "150/95" })).toEqual(
+      expect.objectContaining({
+        [AUTO_VITAL_FINDING_IDS.hypertension]: "present"
+      })
+    );
+    expect(getAutoVitalFindingStates({ ...blankVitals, bp: "180/120" })).toEqual(
+      expect.objectContaining({
+        [AUTO_VITAL_FINDING_IDS.hypertension]: "present",
+        [AUTO_VITAL_FINDING_IDS.severeBp]: "present"
+      })
+    );
+    expect(getAutoVitalFindingStates({ ...blankVitals, bp: "85/55" })).toEqual(
+      expect.objectContaining({
+        [AUTO_VITAL_FINDING_IDS.hypotension]: "present",
+        [AUTO_VITAL_FINDING_IDS.generatedHypotension]: "present"
+      })
+    );
+    expect(getAutoVitalFindingStates(blankVitals)).toEqual({});
+  });
+
+  it("keeps existing hypoxemia auto-mapping and generated hypoxia mapping", () => {
+    expect(
+      getAutoVitalFindingStates({
+        bp: "",
+        hr: "",
+        rr: "",
+        spo2: "SpO2 91%",
+        bt: ""
+      })
+    ).toEqual(
+      expect.objectContaining({
+        [AUTO_VITAL_FINDING_IDS.hypoxemia]: "present",
+        [AUTO_VITAL_FINDING_IDS.generatedHypoxia]: "present"
+      })
+    );
+  });
+
+  it("lets manual finding states override automatic vital states", () => {
+    const merged = mergeFindingStates(
+      { [AUTO_VITAL_FINDING_IDS.hypertension]: "absent" },
+      { [AUTO_VITAL_FINDING_IDS.hypertension]: "present" }
+    );
+
+    expect(merged[AUTO_VITAL_FINDING_IDS.hypertension]).toBe("absent");
   });
 
   it("keeps legacy selected-id calculation available", () => {

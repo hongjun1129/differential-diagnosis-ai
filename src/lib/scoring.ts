@@ -7,6 +7,7 @@ import {
   missingKeyDataByDiagnosis,
   nextDiscriminatingInfoByDiagnosis
 } from "@/data/chestPainRules";
+import { evaluateVitalSigns } from "@/lib/vitals";
 import type {
   ChestPainRule,
   ConflictWarning,
@@ -43,6 +44,20 @@ export const diagnosisByCode = new Map(
 export const findingRuleById = new Map(
   chestPainRules.map((finding) => [finding.id, finding])
 );
+
+export const AUTO_VITAL_FINDING_IDS = {
+  hypotension: "V28",
+  generatedHypotension: "AK-195",
+  hypertension: "AK-002",
+  severeBp: "AK-003",
+  tachycardia: "V30",
+  bradycardia: "V156",
+  tachypnea: "V157",
+  generatedTachypnea: "AK-004",
+  hypoxemia: "V29",
+  generatedHypoxia: "AK-185",
+  fever: "V31"
+} as const;
 
 function applies(effect: RuleEffect, states: FindingStateMap) {
   if (
@@ -82,31 +97,41 @@ export function detectConflicts(states: FindingStateMap): ConflictWarning[] {
     });
 }
 
-function normalizeNumeric(value: string) {
-  const match = value.match(/-?\d+(\.\d+)?/);
-  return match ? Number(match[0]) : undefined;
-}
-
-function systolicBp(bp: string) {
-  const match = bp.match(/(\d{2,3})\s*\/\s*\d{2,3}/);
-  if (match) return Number(match[1]);
-  return normalizeNumeric(bp);
+function markPresentIfKnown(states: FindingStateMap, id: string) {
+  if (chestPainRuleById.has(id)) states[id] = "present";
 }
 
 export function getAutoVitalFindingStates(vitals: VitalSigns): FindingStateMap {
   const states: FindingStateMap = {};
-  const sbp = systolicBp(vitals.bp);
-  const hr = normalizeNumeric(vitals.hr);
-  const rr = normalizeNumeric(vitals.rr);
-  const spo2 = normalizeNumeric(vitals.spo2);
-  const bt = normalizeNumeric(vitals.bt);
+  const evaluations = evaluateVitalSigns(vitals);
 
-  if (sbp !== undefined && sbp < 90) states.V28 = "present";
-  if (hr !== undefined && hr >= 100) states.V30 = "present";
-  if (hr !== undefined && hr < 50) states.V156 = "present";
-  if (rr !== undefined && rr >= 22) states.V157 = "present";
-  if (spo2 !== undefined && spo2 < 94) states.V29 = "present";
-  if (bt !== undefined && bt >= 38) states.V31 = "present";
+  if (evaluations.bp.flags.includes("hypotension")) {
+    markPresentIfKnown(states, AUTO_VITAL_FINDING_IDS.hypotension);
+    markPresentIfKnown(states, AUTO_VITAL_FINDING_IDS.generatedHypotension);
+  }
+  if (evaluations.bp.flags.includes("hypertension")) {
+    markPresentIfKnown(states, AUTO_VITAL_FINDING_IDS.hypertension);
+  }
+  if (evaluations.bp.flags.includes("severe_bp")) {
+    markPresentIfKnown(states, AUTO_VITAL_FINDING_IDS.severeBp);
+  }
+  if (evaluations.hr.flags.includes("tachycardia")) {
+    markPresentIfKnown(states, AUTO_VITAL_FINDING_IDS.tachycardia);
+  }
+  if (evaluations.hr.flags.includes("bradycardia")) {
+    markPresentIfKnown(states, AUTO_VITAL_FINDING_IDS.bradycardia);
+  }
+  if (evaluations.rr.flags.includes("tachypnea")) {
+    markPresentIfKnown(states, AUTO_VITAL_FINDING_IDS.tachypnea);
+    markPresentIfKnown(states, AUTO_VITAL_FINDING_IDS.generatedTachypnea);
+  }
+  if (evaluations.spo2.flags.includes("hypoxemia")) {
+    markPresentIfKnown(states, AUTO_VITAL_FINDING_IDS.hypoxemia);
+    markPresentIfKnown(states, AUTO_VITAL_FINDING_IDS.generatedHypoxia);
+  }
+  if (evaluations.bt.flags.includes("fever")) {
+    markPresentIfKnown(states, AUTO_VITAL_FINDING_IDS.fever);
+  }
 
   return states;
 }

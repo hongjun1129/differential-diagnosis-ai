@@ -40,8 +40,8 @@ export function DoctorNoteCard({
       <textarea
         value={patient.memo}
         onChange={(event) => onChange({ ...patient, memo: event.target.value })}
-        className="min-h-[150px] w-full flex-1 resize-y rounded-md border border-blue-200 px-3 py-2 text-xs leading-5 text-slate-900 md:min-h-[180px] xl:min-h-[190px]"
-        placeholder="예: 55세 남성, 30분 전 갑작스럽게 찢어지는 흉통. 등으로 방사. BP 85/55, HR 124. 호흡곤란은 없음. ECG ST elevation 없음. Troponin 검사 진행 중."
+        className="min-h-[100px] w-full flex-1 resize-y rounded-md border border-blue-200 px-3 py-2 text-xs leading-5 text-slate-900 md:min-h-[120px] xl:min-h-[130px]"
+        placeholder="예: 55세 남성, 30분 전 갑작스러운 흉통. 등으로 방사. 위험인자, ECG, troponin 등 감별 단서를 자유롭게 기록."
         maxLength={1000}
       />
 

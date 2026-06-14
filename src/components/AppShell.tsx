@@ -2,7 +2,12 @@ import type { ReactNode } from "react";
 import { SafetyBanner } from "@/components/SafetyBanner";
 import { Sidebar } from "@/components/Sidebar";
 
-export function AppShell({ children }: { children: ReactNode }) {
+type AppShellProps = {
+  children: ReactNode;
+  topBarContent?: ReactNode;
+};
+
+export function AppShell({ children, topBarContent }: AppShellProps) {
   return (
     <div className="min-h-screen bg-slate-100 xl:h-screen xl:w-screen xl:overflow-hidden">
       <div className="xl:hidden">
@@ -10,8 +15,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
 
       <div className="min-w-0 xl:flex xl:h-screen xl:min-h-0 xl:flex-col xl:overflow-hidden">
-        <header className="h-14 shrink-0 border-b border-blue-100 bg-white/95 px-3">
-          <div className="flex h-full items-center justify-between gap-3">
+        <header className="shrink-0 border-b border-blue-100 bg-white/95 px-3">
+          <div className="flex min-h-14 items-center justify-between gap-3">
             <div className="min-w-0">
               <h1 className="truncate text-lg font-extrabold leading-5 text-slate-950 md:text-xl">
                 흉통 감별진단 체크리스트 보조 AI
@@ -41,9 +46,13 @@ export function AppShell({ children }: { children: ReactNode }) {
               </details>
             </div>
           </div>
+
+          {topBarContent ? (
+            <div className="border-t border-blue-50 py-2">{topBarContent}</div>
+          ) : null}
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto px-3 py-3 pb-16 md:pb-3 xl:h-[calc(100vh-56px)] xl:overflow-hidden xl:p-0">
+        <main className="min-h-0 flex-1 overflow-y-auto px-3 py-3 pb-16 md:pb-3 xl:overflow-hidden xl:p-0">
           {children}
         </main>
 
