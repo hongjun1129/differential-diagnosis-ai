@@ -34,7 +34,7 @@ export type DiseaseShortlistItem = Pick<
   keyFindings: string[];
 };
 
-const diagnosisEnglishNames: Partial<Record<DiagnosisCode, string>> = {
+const diagnosisEnglishNames: Partial<Record<string, string>> = {
   STEMI: "ST-elevation myocardial infarction",
   NSTEMI: "Non-ST-elevation myocardial infarction",
   UA: "Unstable angina",
@@ -142,7 +142,8 @@ function buildAliases(code: DiagnosisCode, nameKo: string, nameEn: string) {
 
 export const diseaseRegistry: DiseaseRegistryEntry[] = diagnoses.map(
   (diagnosis) => {
-    const nameEn = diagnosisEnglishNames[diagnosis.code] ?? diagnosis.code;
+    const nameEn =
+      diagnosis.nameEn ?? diagnosisEnglishNames[diagnosis.code] ?? diagnosis.code;
     return {
       diseaseId: diagnosis.code,
       nameKo: diagnosis.nameKo,

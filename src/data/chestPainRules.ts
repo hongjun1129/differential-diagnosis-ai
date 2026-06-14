@@ -1,3 +1,4 @@
+import { dangerousBaselineCodes, diagnoses } from "@/data/diagnoses";
 import { findingRules } from "@/data/findingRules";
 import type {
   ChestPainRule,
@@ -20,10 +21,10 @@ const triStateCategories = new Set<FindingCategory>([
 
 const conflictPairs: Array<[string, string, DiagnosisCode[]]> = [
   ["T98", "T99", ["PE"]],
-  ["T93", "T97", ["DIS", "IMH", "PAU", "TAA"]],
-  ["T94", "T97", ["DIS", "IMH", "PAU", "TAA"]],
-  ["T95", "T97", ["DIS", "IMH", "PAU", "TAA"]],
-  ["T96", "T97", ["DIS", "IMH", "PAU", "TAA"]],
+  ["T93", "T97", ["DIS", "AAS_IMH_PAU", "TAA"]],
+  ["T94", "T97", ["DIS", "AAS_IMH_PAU", "TAA"]],
+  ["T95", "T97", ["DIS", "AAS_IMH_PAU", "TAA"]],
+  ["T96", "T97", ["DIS", "AAS_IMH_PAU", "TAA"]],
   ["L62", "L64", ["STEMI", "NSTEMI", "UA", "MYO", "TTS"]],
   ["T102", "T106", ["PTX", "TPTX"]],
   ["T103", "T106", ["PTX", "TPTX"]],
@@ -64,82 +65,33 @@ const strongSupportOverrides: Partial<Record<string, DiagnosisCode[]>> = {
 const ruleOutOverrides: Partial<Record<string, DiagnosisCode[]>> = {
   L64: ["STEMI", "NSTEMI", "UA"],
   L68: ["PE"],
-  T97: ["DIS", "IMH", "PAU", "TAA"],
+  T97: ["DIS", "AAS_IMH_PAU", "TAA"],
   T99: ["PE"],
   G124: ["BOER"],
   G135: ["CHOLE", "CHOLANG", "BILCOL"],
   G136: ["PANC"]
 };
 
-export const emergencyMustNotMissCodes: DiagnosisCode[] = [
-  "STEMI",
-  "NSTEMI",
-  "DIS",
-  "PE",
-  "TPTX",
-  "PERI",
-  "BOER"
-];
+export const emergencyMustNotMissCodes: DiagnosisCode[] = dangerousBaselineCodes;
 
-export const emergencyDisplayNames: Record<DiagnosisCode, string> = {
+const emergencyDisplayNameOverrides: Partial<Record<DiagnosisCode, string>> = {
   STEMI: "STEMI",
   NSTEMI: "NSTEMI / ACS",
   DIS: "Aortic dissection",
   PE: "Pulmonary embolism",
   TPTX: "Tension pneumothorax",
   PERI: "Cardiac tamponade",
-  BOER: "Esophageal rupture / Boerhaave syndrome",
-  UA: "불안정 협심증",
-  SA_CCD: "안정형 협심증",
-  VSA: "이형 협심증",
-  T2MI: "2형 심근경색",
-  INOCA: "INOCA",
-  MYO: "심근염",
-  TTS: "Takotsubo",
-  HCM: "비후성 심근병증",
-  AS: "대동맥판막 협착증",
-  ARR: "부정맥",
-  AHF: "급성 심부전",
-  MVP: "승모판 탈출증",
-  IMH: "대동맥 벽내혈종",
-  PAU: "관통성 대동맥 궤양",
-  TAA: "흉부 대동맥류",
-  PNA: "폐렴",
-  PLEUR: "흉막염",
-  PTX: "기흉",
-  PH: "폐고혈압",
-  PLEFF: "흉수",
-  EMP: "농흉",
-  ASTH_COPD: "천식/COPD 악화",
-  PMED: "기종격동",
-  LUNGCA: "폐암/종격동 종양",
-  GERD: "GERD",
-  HH: "식도열공탈장",
-  ESPASM: "식도연축",
-  ESOPH: "식도염",
-  PUD: "소화성 궤양",
-  PERF_PUD: "천공성 소화성 궤양",
-  DYSPEP: "소화불량",
-  BILCOL: "담도산통",
-  CHOLE: "담낭염",
-  CHOLANG: "담관염",
-  PANC: "췌장염",
-  COSTO: "늑연골염",
-  TIETZE: "Tietze 증후군",
-  STRAIN: "흉벽 근육 염좌",
-  RIB: "늑골골절",
-  CRAD: "경추 신경근병증",
-  TRAD: "흉추 신경근병증",
-  ICN: "늑간신경통",
-  SHOULDER: "어깨 질환",
-  XIPHO: "검상돌기통",
-  ZOSTER: "대상포진",
-  FIBRO: "섬유근통",
-  PANIC: "공황발작",
-  ANX: "불안 관련 흉부 압박감",
-  HVS: "과호흡 증후군",
-  FCP: "기능성 흉통"
+  BOER: "Esophageal rupture / Boerhaave syndrome"
 };
+
+export const emergencyDisplayNames = Object.fromEntries(
+  diagnoses.map((diagnosis) => [
+    diagnosis.code,
+    emergencyDisplayNameOverrides[diagnosis.code] ??
+      diagnosis.nameEn ??
+      diagnosis.nameKo
+  ])
+) as Record<DiagnosisCode, string>;
 
 export const nextDiscriminatingInfoByDiagnosis: Partial<Record<DiagnosisCode, string>> = {
   STEMI: "ACS 감별에 필요한 추가 정보: 반복 ECG 변화, serial hs-troponin 변화, 증상 시작 시점",

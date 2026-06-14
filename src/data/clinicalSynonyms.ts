@@ -19,5 +19,12 @@ export const clinicalSynonyms = {
   chestWallTenderness: ["흉벽 압통", "누르면", "reproducible", "tenderness"],
   pneumothorax: ["기흉", "pneumothorax", "PTX"],
   pulmonaryEmbolism: ["폐색전증", "pulmonary embolism", "PE"],
-  dissection: ["대동맥 박리", "aortic dissection", "dissection"]
+  dissection: ["대동맥 박리", "aortic dissection", "dissection"],
+  scad: ["SCAD", "자발성 관상동맥 박리", "spontaneous coronary artery dissection"],
+  minoca: ["MINOCA", "non-obstructive coronary arteries", "비폐쇄성 관상동맥"],
+  stimulantIschemia: ["cocaine", "amphetamine", "stimulant ischemia", "자극제 관련 허혈"],
+  tamponade: ["심장압전", "tamponade", "cardiac tamponade"],
+  boerhaave: ["Boerhaave", "식도파열", "esophageal rupture"],
+  addRs: ["ADD-RS", "aortic dissection detection risk score"],
+  wellsGenevaPerc: ["Wells", "Geneva", "PERC", "Wells/PERC/D-dimer"]
 } as const;

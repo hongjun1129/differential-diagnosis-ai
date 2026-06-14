@@ -539,6 +539,58 @@ export const checklistNlpRules: ChecklistNlpRule[] = [
     synonyms: ["심장압전", "cardiac tamponade"],
     defaultContext: "hypothesis",
     redFlag: true
+  }),
+  rule({
+    itemId: "AK-035",
+    labelKo: "young female ACS",
+    labelEn: "SCAD risk context",
+    conceptType: "risk_factor",
+    conceptId: "risk_factor.scad_context",
+    patterns: [rx("SCAD|자발성\\s*관상동맥\\s*박리|spontaneous\\s*coronary\\s*artery\\s*dissection|산후.{0,12}ACS|postpartum.{0,12}ACS")],
+    synonyms: ["SCAD", "자발성 관상동맥 박리", "postpartum ACS"],
+    defaultContext: "risk_factor",
+    redFlag: true
+  }),
+  rule({
+    itemId: "AK-142",
+    labelKo: "stimulant use",
+    labelEn: "stimulant-associated ischemia",
+    conceptType: "risk_factor",
+    conceptId: "risk_factor.stimulant_ischemia",
+    patterns: [rx("cocaine|amphetamine|stimulant|코카인|암페타민|자극제")],
+    synonyms: ["cocaine", "amphetamine", "stimulant", "자극제"],
+    defaultContext: "risk_factor"
+  }),
+  rule({
+    itemId: "AK-214",
+    labelKo: "MI + nonobstructive coronaries",
+    labelEn: "MINOCA",
+    conceptType: "imaging",
+    conceptId: "diagnosis.minoca",
+    patterns: [rx("MINOCA|non[-\\s]?obstructive\\s*coronar|비폐쇄성\\s*관상동맥")],
+    synonyms: ["MINOCA", "nonobstructive coronaries", "비폐쇄성 관상동맥"],
+    defaultContext: "test_result"
+  }),
+  rule({
+    itemId: "AK-059",
+    labelKo: "vomiting before pain",
+    labelEn: "Boerhaave trigger",
+    conceptType: "symptom",
+    conceptId: "red_flag.boerhaave_trigger",
+    patterns: [rx("(구토|헛구역질|retching|vomiting).{0,16}(후|뒤|before).{0,16}(흉통|가슴|pain)")],
+    synonyms: ["구토 후 흉통", "vomiting before pain", "Boerhaave"],
+    redFlag: true
+  }),
+  rule({
+    itemId: "AK-145",
+    labelKo: "Wells/PERC/D-dimer",
+    labelEn: "PE score criteria",
+    conceptType: "lab",
+    conceptId: "score.pe_wells_perc",
+    patterns: [rx("Wells|Geneva|PERC|D-?dimer|디다이머")],
+    synonyms: ["Wells", "Geneva", "PERC", "D-dimer", "디다이머"],
+    defaultContext: "test_result",
+    redFlag: true
   })
 ];
 

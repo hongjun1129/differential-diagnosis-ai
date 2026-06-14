@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
+import {
+  appKeyChecklistItems,
+  checklistEvaluationStateMappings,
+  comprehensiveChecklistItems,
+  redFlagGates,
+  scoreItems
+} from "@/data/clinicalChecklistData";
 import { diseaseRegistry } from "@/data/diseaseRegistry";
-import { diagnoses } from "@/data/diagnoses";
+import { diagnoses, diagnosisCodeByV12No } from "@/data/diagnoses";
+import { findingRules } from "@/data/findingRules";
 import {
   calculateDiagnosisScores,
   detectConflicts,
@@ -87,15 +95,51 @@ describe("clinical rule evaluation", () => {
 
   it("keeps must-not-miss diagnoses visible in the emergency panel", () => {
     const emergency = getEmergencyEvaluations(evaluateDiagnoses({}));
-    expect(emergency.map((item) => item.diagnosis.code)).toEqual([
-      "STEMI",
-      "NSTEMI",
-      "DIS",
-      "PE",
-      "TPTX",
-      "PERI",
-      "BOER"
-    ]);
+    expect(emergency.map((item) => item.diagnosis.code)).toEqual(
+      redFlagGates.map((gate) => gate.code)
+    );
+  });
+
+  it("loads the v1.2 source-of-truth workbook counts", () => {
+    expect(diagnoses).toHaveLength(90);
+    expect(Object.keys(diagnosisCodeByV12No)).toHaveLength(90);
+    expect(appKeyChecklistItems).toHaveLength(262);
+    expect(comprehensiveChecklistItems).toHaveLength(1169);
+    expect(redFlagGates).toHaveLength(18);
+    expect(scoreItems).toHaveLength(33);
+  });
+
+  it("keeps diagnosis and finding-rule references internally valid", () => {
+    const codes = diagnoses.map((diagnosis) => diagnosis.code);
+    const knownCodes = new Set(codes);
+
+    expect(new Set(codes).size).toBe(codes.length);
+    expect(validateFindingRuleCodes()).toEqual([]);
+
+    for (const rule of findingRules) {
+      for (const code of Object.keys(rule.weights)) {
+        expect(knownCodes.has(code as DiagnosisCode), `${rule.id}:${code}`).toBe(
+          true
+        );
+      }
+      for (const code of rule.redFlagFor ?? []) {
+        expect(
+          knownCodes.has(code as DiagnosisCode),
+          `${rule.id}:redFlagFor:${code}`
+        ).toBe(true);
+      }
+    }
+  });
+
+  it("preserves workbook state-label mapping conservatively", () => {
+    expect(checklistEvaluationStateMappings).toEqual(
+      expect.arrayContaining([
+        { labelKo: "미확인", state: "unknown" },
+        { labelKo: "있음", state: "present" },
+        { labelKo: "없음", state: "absent" },
+        { labelKo: "해당없음", state: "unknown" }
+      ])
+    );
   });
 
   it.each(scenarioFixtures)(

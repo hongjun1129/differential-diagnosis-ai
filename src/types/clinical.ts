@@ -14,62 +14,96 @@ export type DiagnosisCode =
   | "UA"
   | "SA_CCD"
   | "VSA"
-  | "T2MI"
   | "INOCA"
-  | "MYO"
-  | "PERI"
-  | "TTS"
-  | "HCM"
-  | "AS"
-  | "ARR"
-  | "AHF"
-  | "MVP"
+  | "SCAD"
   | "DIS"
-  | "IMH"
-  | "PAU"
   | "TAA"
+  | "PERI"
+  | "MYO"
+  | "AHF"
+  | "AS"
+  | "MVP"
+  | "HCM"
+  | "ARR"
+  | "TTS"
+  | "HTN_EMERG"
   | "PE"
+  | "TPTX"
+  | "PTX"
+  | "TRAUMATIC_PTX_HEMOTHORAX"
   | "PNA"
   | "PLEUR"
-  | "PTX"
-  | "TPTX"
-  | "PH"
   | "PLEFF"
-  | "EMP"
-  | "ASTH_COPD"
+  | "PULM_INFARCT"
   | "PMED"
+  | "ASTHMA_EXAC"
+  | "COPD_EXAC"
   | "LUNGCA"
   | "GERD"
-  | "HH"
-  | "ESPASM"
   | "ESOPH"
+  | "ESPASM"
   | "BOER"
+  | "MALLORY_WEISS"
   | "PUD"
-  | "PERF_PUD"
   | "DYSPEP"
   | "BILCOL"
   | "CHOLE"
   | "CHOLANG"
   | "PANC"
+  | "HH"
   | "COSTO"
   | "TIETZE"
   | "STRAIN"
   | "RIB"
-  | "CRAD"
-  | "TRAD"
+  | "CHEST_CONTUSION"
   | "ICN"
-  | "SHOULDER"
-  | "XIPHO"
+  | "CRAD_TRAD"
   | "ZOSTER"
   | "FIBRO"
+  | "TOS"
   | "PANIC"
   | "ANX"
   | "HVS"
-  | "FCP";
+  | "FCP"
+  | "SOMATIC_CHEST_PAIN"
+  | "T2MI"
+  | "AAS_IMH_PAU"
+  | "CORONARY_EMBOLISM"
+  | "STIMULANT_ISCHEMIA"
+  | "MINOCA"
+  | "TAMPONADE"
+  | "PH_RV_ISCHEMIA"
+  | "ANOMALOUS_CORONARY"
+  | "EMP"
+  | "VIRAL_PLEURITIS"
+  | "TB_PLEURITIS"
+  | "SICKLE_ACUTE_CHEST"
+  | "VIRAL_PNA"
+  | "LUNG_ABSCESS"
+  | "MEDIASTINITIS"
+  | "PERF_PUD"
+  | "ACHALASIA"
+  | "PILL_INFECTIOUS_EOE_ESOPHAGITIS"
+  | "ESOPHAGEAL_CANCER"
+  | "GASTRIC_VOLVULUS"
+  | "SPLENIC_INFARCT"
+  | "SUBPHRENIC_ABSCESS"
+  | "THORACIC_COMPRESSION_FX"
+  | "SLIPPING_RIB"
+  | "SC_JOINT_INFECTION"
+  | "XIPHO"
+  | "PRECORDIAL_CATCH"
+  | "AUTOIMMUNE_SEROSITIS"
+  | "CO_POISONING_ISCHEMIA"
+  | "MASTITIS_MONDOR"
+  | "TRAUMATIC_AORTIC_INJURY"
+  | "PULM_CONTUSION_FLAIL"
+  | "STRANGULATED_HERNIA";
 
 export type Diagnosis = {
   code: DiagnosisCode;
   nameKo: string;
+  nameEn?: string;
   category: DiagnosisCategory;
   urgency: Urgency;
   mustNotMiss: boolean;
@@ -78,7 +112,109 @@ export type Diagnosis = {
   confirmatoryTests: string[];
   ruleOutConsiderations: string[];
   redFlags: string[];
+  originalCategory?: string;
+  priorityLabel?: string;
+  mustNotMissGate?: string;
+  sourceUrls?: string[];
+  evidenceLevel?: string;
+  evidenceGrade?: string;
+  reviewStatus?: string;
+  primaryEvidence?: string;
+  v12ChangeNote?: string;
+  sourceNote?: string;
+  checklistIds?: {
+    appKey: string[];
+    comprehensive: string[];
+  };
 };
+
+
+export type AppKeyChecklistItem = {
+  id: string;
+  section: string;
+  labelKo: string;
+  defaultState: FindingState;
+  memo: string;
+  relatedDiagnosisNames: string[];
+  relatedDiagnosisCodes: DiagnosisCode[];
+  redFlag: boolean;
+  sourceExample: string;
+};
+
+export type ComprehensiveChecklistItem = {
+  id: string;
+  section: string;
+  labelKo: string;
+  defaultState: FindingState;
+  memo: string;
+  relatedDiagnosisNames: string[];
+  relatedDiagnosisCodes: DiagnosisCode[];
+  redFlag: boolean;
+  impact: string;
+  sourceColumn: string;
+  representativeSourceText: string;
+};
+
+export type RedFlagGate = {
+  no: number;
+  code: DiagnosisCode;
+  nameKo: string;
+  nameEn: string;
+  gate: string;
+  appKeyChecklistIds: string[];
+  comprehensiveChecklistIds: string[];
+  caution: string;
+};
+
+export type ScoreItem = {
+  id: string;
+  labelKo: string;
+  relatedDiagnosisNames: string[];
+  relatedDiagnosisCodes: DiagnosisCode[];
+  sourceColumn: string;
+  representativeSourceText: string;
+  defaultState: FindingState;
+  memo: string;
+};
+
+export type VerbatimChecklistMapping = {
+  checklistId: string;
+  diagnosisNo: number;
+  diagnosisCode: DiagnosisCode;
+  diagnosisNameKo: string;
+  section: string;
+  labelKo: string;
+  impact: string;
+  sourceColumn: string;
+  verbatimCell: string;
+  sourceUrls: string[];
+  evidenceLevel: string;
+  evidenceGrade: string;
+  v12ChangeNote: string;
+};
+
+export type ChecklistEvaluationStateMapping = {
+  labelKo: string;
+  state: FindingState;
+};
+
+export type ClinicalSourceReference = {
+  key: string;
+  title: string;
+  url: string;
+  coverage: string;
+  doiOrFormalUrl: string;
+  year: string;
+  evidenceType: string;
+};
+
+export type ClinicalWorkflowRule = {
+  id: string;
+  ruleKo: string;
+  caution: string;
+};
+
+export type ClinicalDispositionRow = Record<string, string>;
 
 export type FindingCategory =
   | "history"
