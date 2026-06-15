@@ -121,6 +121,25 @@ function supportWidth(score: number) {
   return `${Math.min(100, Math.max(8, (score + 8) * 7))}%`;
 }
 
+function urgencyIconTone(score: DiagnosisEvaluation) {
+  if (
+    score.evidenceStatus === "rule_in_evidence" ||
+    score.diagnosis.urgency === "emergent"
+  ) {
+    return "border-red-100 bg-red-50 text-red-700";
+  }
+  if (
+    score.evidenceStatus === "strongly_supported" ||
+    score.diagnosis.urgency === "urgent"
+  ) {
+    return "border-orange-100 bg-orange-50 text-orange-700";
+  }
+  if (score.evidenceStatus === "conflicting_evidence") {
+    return "border-purple-100 bg-purple-50 text-purple-700";
+  }
+  return "border-slate-100 bg-slate-100 text-slate-600";
+}
+
 function EmergencyPanel({
   emergencyScores,
   activeCode,
@@ -137,8 +156,8 @@ function EmergencyPanel({
     .filter((score): score is DiagnosisEvaluation => Boolean(score));
 
   return (
-    <section className="shrink-0 border-t border-red-100 bg-red-50/70">
-      <div className="flex items-center justify-between gap-2 px-3 py-1.5">
+    <section className="shrink-0 border-t border-red-100 bg-red-50/80">
+      <div className="flex items-center justify-between gap-2 px-3 py-2">
         <div className="flex items-center gap-1.5">
           <AlertTriangle className="h-3.5 w-3.5 text-red-700" aria-hidden />
           <h3 className="text-xs font-extrabold text-red-950">
@@ -150,7 +169,7 @@ function EmergencyPanel({
         </span>
       </div>
 
-      <div className="grid gap-1 overflow-y-auto px-2 pb-2">
+      <div className="grid gap-1 overflow-y-auto px-3 pb-3">
         {orderedEmergencyScores.map((score) => {
           const active = activeCode === score.diagnosis.code;
           const tone = evidenceStatusTone[score.evidenceStatus];
@@ -160,10 +179,10 @@ function EmergencyPanel({
               key={score.diagnosis.code}
               type="button"
               onClick={() => onSelect(score.diagnosis.code)}
-              className={`grid min-h-[28px] grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-md border bg-white px-2 py-1 text-left text-[11px] transition ${
+              className={`grid min-h-[30px] grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-[8px] border bg-white px-2 py-1 text-left text-[11px] transition ${
                 active
-                  ? "border-red-300 ring-2 ring-red-100"
-                  : "border-red-100 hover:border-red-200"
+                  ? "border-red-300 shadow-sm ring-2 ring-red-100"
+                  : "border-red-100 hover:border-red-200 hover:shadow-sm"
               }`}
             >
               <span className="min-w-0 truncate font-bold text-slate-950">
@@ -227,13 +246,13 @@ export function DiagnosisRanking({
   }, [emergencyScores, scores, selectedFindingCount, viewMode]);
 
   return (
-    <section className="flex h-full min-h-[560px] flex-col overflow-hidden rounded-lg border border-blue-200 bg-white shadow-soft xl:min-h-0">
-      <div className="shrink-0 border-b border-blue-100 px-3 py-2">
+    <section className="flex h-full min-h-[560px] flex-col overflow-hidden rounded-[12px] border border-slate-200 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04),0_1px_3px_rgba(16,24,40,0.06)] xl:min-h-0">
+      <div className="shrink-0 border-b border-slate-100 px-4 py-3">
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <BarChart3 className="h-4 w-4 shrink-0 text-blue-700" aria-hidden />
             <div className="min-w-0">
-              <h2 className="truncate text-sm font-extrabold text-blue-950">
+              <h2 className="truncate text-[13.5px] font-bold text-slate-900">
                 감별진단 우선순위
               </h2>
               <p className="truncate text-[11px] text-slate-500">
@@ -241,7 +260,7 @@ export function DiagnosisRanking({
               </p>
             </div>
           </div>
-          <span className="shrink-0 rounded-md bg-blue-50 px-2 py-1 text-[11px] font-bold text-blue-700">
+          <span className="shrink-0 rounded-[7px] bg-blue-50 px-2 py-1 text-[11px] font-bold text-blue-700">
             기록 {selectedFindingCount}
           </span>
         </div>
@@ -252,7 +271,7 @@ export function DiagnosisRanking({
               key={mode}
               type="button"
               onClick={() => setViewMode(mode)}
-              className={`inline-flex h-7 shrink-0 items-center gap-1 rounded-md border px-2 text-[11px] font-bold ${
+              className={`inline-flex h-8 shrink-0 items-center gap-1 rounded-[8px] border px-3 text-[11px] font-bold ${
                 viewMode === mode
                   ? "border-blue-600 bg-blue-700 text-white"
                   : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
@@ -280,9 +299,9 @@ export function DiagnosisRanking({
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 divide-y divide-slate-100 overflow-y-auto">
+      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto bg-[#f7f9fc] p-3">
         {visibleScores.length === 0 ? (
-          <p className="px-3 py-6 text-center text-xs font-semibold text-slate-500">
+          <p className="rounded-[9px] border border-slate-200 bg-white px-3 py-6 text-center text-xs font-semibold text-slate-500">
             현재 필터에 해당하는 감별진단이 없습니다.
           </p>
         ) : null}
@@ -290,47 +309,57 @@ export function DiagnosisRanking({
         {visibleScores.map((score) => {
           const active = activeCode === score.diagnosis.code;
           const tone = evidenceStatusTone[score.evidenceStatus];
+          const iconTone = urgencyIconTone(score);
           const rank = scores.findIndex(
             (item) => item.diagnosis.code === score.diagnosis.code
           ) + 1;
+          const evidenceSummary = [
+            ...score.ruleInFindings,
+            ...score.supportingFindings
+          ]
+            .slice(0, 2)
+            .map((finding) => finding.labelKo)
+            .join(", ");
 
           return (
             <button
               key={score.diagnosis.code}
               type="button"
               onClick={() => onSelect(score.diagnosis.code)}
-              className={`grid min-h-[44px] w-full grid-cols-[28px_minmax(0,1fr)_92px] items-center gap-2 px-3 py-1.5 text-left transition ${
-                active ? "bg-blue-50" : "bg-white hover:bg-slate-50"
+              className={`grid w-full grid-cols-[44px_minmax(0,1fr)] items-start gap-3 rounded-[12px] border bg-white p-3 text-left transition lg:grid-cols-[44px_minmax(0,1fr)_160px] ${
+                active
+                  ? "border-blue-300 shadow-sm ring-2 ring-blue-100"
+                  : "border-slate-200 hover:border-blue-200 hover:shadow-sm"
               }`}
             >
               <span
-                className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ${
-                  active
-                    ? "bg-blue-700 text-white"
-                    : "bg-slate-100 text-slate-600"
-                }`}
+                className={`flex h-11 w-11 items-center justify-center rounded-[11px] border text-sm font-extrabold ${iconTone}`}
               >
                 {rank}
               </span>
 
               <span className="min-w-0">
-                <span className="block truncate text-sm font-bold text-slate-950">
+                <span className="block truncate text-[14.5px] font-bold text-slate-950">
                   {score.diagnosis.nameKo}
                 </span>
-                <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px] text-slate-500">
-                  <span>상승 {score.supportingFindings.length}</span>
-                  <span>감소 {score.findingsAgainst.length}</span>
-                  <span>rule-in {score.ruleInFindings.length}</span>
+                <span className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <span
+                    className={`rounded-full border px-2 py-1 text-[11px] font-bold ${tone.className}`}
+                  >
+                    {evidenceStatusLabels[score.evidenceStatus]}
+                  </span>
+                  <span className="rounded-full bg-red-50 px-2 py-1 text-[11px] font-bold text-red-700">
+                    응급도 {score.urgencyScore}
+                  </span>
+                  <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">
+                    지지도 {score.likelihoodSupportScore}
+                  </span>
                 </span>
-              </span>
-
-              <span className="min-w-0">
-                <span
-                  className={`block truncate rounded border px-1.5 py-0.5 text-center text-[10px] font-bold ${tone.className}`}
-                >
-                  {evidenceStatusLabels[score.evidenceStatus]}
+                <span className="mt-2 block line-clamp-2 text-xs leading-5 text-slate-600">
+                  <b className="font-semibold text-slate-700">근거:</b>{" "}
+                  {evidenceSummary || "현재 선택된 지지 근거가 부족합니다."}
                 </span>
-                <span className="mt-1 flex items-center gap-1">
+                <span className="mt-2 flex items-center gap-2">
                   <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
                     <span
                       className={`block h-full rounded-full ${tone.barClassName}`}
@@ -339,10 +368,24 @@ export function DiagnosisRanking({
                       }}
                     />
                   </span>
-                  <ChevronRight
-                    className="h-3.5 w-3.5 shrink-0 text-slate-400"
-                    aria-hidden
-                  />
+                  <span className="text-[10px] font-semibold text-slate-500">
+                    상승 {score.supportingFindings.length} · 감소{" "}
+                    {score.findingsAgainst.length} · rule-in{" "}
+                    {score.ruleInFindings.length}
+                  </span>
+                </span>
+              </span>
+
+              <span className="hidden min-w-0 border-l border-slate-100 pl-3 lg:block">
+                <span className="block text-[11px] font-extrabold uppercase text-slate-400">
+                  다음 액션
+                </span>
+                <span className="mt-1 block line-clamp-3 text-xs leading-5 text-slate-600">
+                  {score.nextDiscriminatingInformation}
+                </span>
+                <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-blue-700">
+                  자세히 보기
+                  <ChevronRight className="h-3.5 w-3.5" aria-hidden />
                 </span>
               </span>
             </button>

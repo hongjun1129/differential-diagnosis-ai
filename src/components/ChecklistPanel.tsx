@@ -106,11 +106,11 @@ export function ChecklistPanel({
   ).length;
 
   return (
-    <section className="flex h-full min-h-[520px] flex-col overflow-hidden rounded-lg border border-blue-200 bg-white shadow-soft xl:min-h-0">
-      <div className="shrink-0 border-b border-blue-100 px-3 py-2">
+    <section className="flex h-full min-h-[520px] flex-col overflow-hidden rounded-[12px] border border-slate-200 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04),0_1px_3px_rgba(16,24,40,0.06)] xl:min-h-0">
+      <div className="shrink-0 border-b border-slate-100 px-4 py-3">
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
-            <h2 className="truncate text-sm font-extrabold text-blue-950">
+            <h2 className="truncate text-[13.5px] font-bold text-slate-900">
               체크리스트
             </h2>
             <p className="truncate text-[11px] text-slate-500">
@@ -120,7 +120,7 @@ export function ChecklistPanel({
           <button
             type="button"
             onClick={onClear}
-            className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-md border border-slate-200 px-2 text-[11px] font-bold text-slate-600 hover:bg-slate-50"
+            className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-[7px] border border-slate-200 bg-white px-2 text-[11px] font-bold text-slate-600 hover:bg-slate-50"
             title="수동 입력 초기화"
           >
             <X className="h-3.5 w-3.5" aria-hidden />
@@ -128,7 +128,7 @@ export function ChecklistPanel({
           </button>
         </div>
 
-        <div className="mt-2 grid grid-cols-4 gap-1">
+        <div className="mt-3 grid grid-cols-4 gap-1.5">
           {[
             ["기록", activeRules.length],
             ["Red", redFlagCount],
@@ -137,7 +137,7 @@ export function ChecklistPanel({
           ].map(([label, count]) => (
             <div
               key={label}
-              className="rounded-md bg-slate-50 px-2 py-1 text-center"
+              className="rounded-[7px] bg-[#f7f9fc] px-2 py-1.5 text-center"
             >
               <p className="text-[10px] font-bold text-slate-500">{label}</p>
               <p className="text-sm font-extrabold text-slate-950">{count}</p>
@@ -146,7 +146,7 @@ export function ChecklistPanel({
         </div>
 
         {conflicts.length > 0 ? (
-          <div className="mt-2 rounded-md border border-purple-200 bg-purple-50 px-2 py-1.5 text-[11px] leading-4 text-purple-900">
+          <div className="mt-2 rounded-[8px] border border-purple-200 bg-purple-50 px-2 py-1.5 text-[11px] leading-4 text-purple-900">
             <div className="flex items-start gap-1.5">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
               <p>
@@ -157,7 +157,7 @@ export function ChecklistPanel({
           </div>
         ) : null}
 
-        <div className="mt-2 grid gap-2">
+        <div className="mt-3 grid gap-2">
           <div className="relative">
             <Search
               className="pointer-events-none absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400"
@@ -166,7 +166,7 @@ export function ChecklistPanel({
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              className="h-8 w-full rounded-md border border-slate-200 py-1.5 pl-8 pr-2 text-xs"
+              className="h-8 w-full rounded-[7px] border border-slate-200 bg-white py-1.5 pl-8 pr-2 text-xs"
               placeholder="ECG, troponin, CTPA, CTA"
             />
           </div>
@@ -177,7 +177,7 @@ export function ChecklistPanel({
                 key={category}
                 type="button"
                 onClick={() => setActiveCategory(category)}
-                className={`inline-flex h-7 shrink-0 items-center gap-1 rounded-md border px-2 text-[11px] font-bold ${
+                className={`inline-flex h-7 shrink-0 items-center gap-1 rounded-[7px] border px-2 text-[11px] font-bold ${
                   activeCategory === category
                     ? "border-blue-600 bg-blue-700 text-white"
                     : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
@@ -223,7 +223,7 @@ export function ChecklistPanel({
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
+      <div className="min-h-0 flex-1 overflow-y-auto bg-[#f7f9fc] px-3 py-3">
         <FindingGroup
           category={activeCategory}
           findings={activeCategoryRules}
@@ -233,7 +233,7 @@ export function ChecklistPanel({
           onSetFindingState={onSetFindingState}
         />
         {activeCategoryRules.length === 0 ? (
-          <p className="rounded-md border border-slate-200 bg-slate-50 px-3 py-4 text-center text-xs font-semibold text-slate-500">
+          <p className="rounded-[9px] border border-slate-200 bg-white px-3 py-4 text-center text-xs font-semibold text-slate-500">
             현재 탭에서 검색 결과가 없습니다.
           </p>
         ) : null}

@@ -42,7 +42,7 @@ export function EvidenceBadge({ value }: EvidenceBadgeProps) {
 
   return (
     <span
-      className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold ${
+      className={`shrink-0 rounded-[6px] px-1.5 py-0.5 text-[10px] font-bold ${
         manual ? "bg-slate-100 text-slate-600" : "bg-sky-100 text-sky-700"
       }`}
       title={title}

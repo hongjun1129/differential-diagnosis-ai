@@ -22,10 +22,10 @@ type FindingGroupProps = {
 };
 
 function stateButtonClass(active: boolean, tone: "blue" | "green" | "slate") {
-  if (active && tone === "blue") return "bg-blue-700 text-white";
-  if (active && tone === "green") return "bg-emerald-700 text-white";
-  if (active && tone === "slate") return "bg-slate-700 text-white";
-  return "bg-slate-100 text-slate-600 hover:bg-slate-200";
+  if (active && tone === "blue") return "bg-blue-700 text-white shadow-sm";
+  if (active && tone === "green") return "bg-emerald-700 text-white shadow-sm";
+  if (active && tone === "slate") return "bg-slate-700 text-white shadow-sm";
+  return "bg-white text-slate-600 hover:bg-slate-100";
 }
 
 export function FindingGroup({
@@ -39,9 +39,9 @@ export function FindingGroup({
   if (findings.length === 0) return null;
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-slate-50/80">
-      <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-2.5 py-2">
-        <h3 className="text-xs font-extrabold text-blue-950">
+    <section className="overflow-hidden rounded-[10px] border border-slate-200 bg-white">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-white px-3 py-2">
+        <h3 className="text-xs font-extrabold text-slate-900">
           {findingCategoryLabels[category]}
         </h3>
         <span className="text-[11px] font-bold text-slate-400">
@@ -61,7 +61,7 @@ export function FindingGroup({
             <div
               key={finding.id}
               title={finding.labelKo}
-              className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-2.5 py-2 text-xs ${
+              className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-3 py-2 text-xs ${
                 present
                   ? "bg-blue-50 text-blue-950"
                   : absent
@@ -87,11 +87,11 @@ export function FindingGroup({
                 </p>
               </div>
 
-              <div className="flex shrink-0 items-center gap-1">
+              <div className="flex shrink-0 items-center gap-1 rounded-[7px] bg-slate-100 p-0.5">
                 <button
                   type="button"
                   onClick={() => onSetFindingState(finding.id, "present")}
-                  className={`inline-flex h-7 min-w-7 items-center justify-center gap-1 rounded px-2 text-[10px] font-bold ${stateButtonClass(
+                  className={`inline-flex h-7 min-w-7 items-center justify-center gap-1 rounded-[6px] px-2 text-[10px] font-bold ${stateButtonClass(
                     present,
                     "blue"
                   )}`}
@@ -105,7 +105,7 @@ export function FindingGroup({
                   <button
                     type="button"
                     onClick={() => onSetFindingState(finding.id, "absent")}
-                    className={`inline-flex h-7 min-w-7 items-center justify-center gap-1 rounded px-2 text-[10px] font-bold ${stateButtonClass(
+                    className={`inline-flex h-7 min-w-7 items-center justify-center gap-1 rounded-[6px] px-2 text-[10px] font-bold ${stateButtonClass(
                       absent,
                       "green"
                     )}`}
@@ -119,7 +119,7 @@ export function FindingGroup({
                 <button
                   type="button"
                   onClick={() => onSetFindingState(finding.id, "unknown")}
-                  className={`inline-flex h-7 min-w-7 items-center justify-center gap-1 rounded px-2 text-[10px] font-bold ${stateButtonClass(
+                  className={`inline-flex h-7 min-w-7 items-center justify-center gap-1 rounded-[6px] px-2 text-[10px] font-bold ${stateButtonClass(
                     state === "unknown",
                     "slate"
                   )}`}
